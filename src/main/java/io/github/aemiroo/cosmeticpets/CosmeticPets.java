@@ -29,7 +29,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     private final Set<UUID> ghostPackLoaded = new HashSet<>();
     private static final UUID GHOST_PACK_ID = UUID.fromString("81e3f811-1da1-4454-b12b-c452ff67ef16");
     private byte[] ghostPackHash;
-    private double ghostPhase;
+    private long animationTick;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -51,7 +51,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             getLogger().severe("Ghost pack hash unavailable; ghost visuals will remain hidden.");
         }
         for (Player player : Bukkit.getOnlinePlayers()) requestGhostPack(player);
-        interval = 2;
+        interval = 1;
         getServer().getScheduler().runTaskTimer(this, this::tick, 1L, interval);
     }
     @Override public void onDisable() {
@@ -80,11 +80,11 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         if (pet != null) destroy(pet);
     }
     private Location destination(Player owner, PetKind kind, float followYaw) {
-        Location base = owner.getLocation();
+        Location base = GhostMotion.upright(owner.getLocation());
         double angle = Math.toRadians(followYaw);
         Location behind = base.clone().add(Math.sin(angle) * 1.6, 0, -Math.cos(angle) * 1.6);
         if (!behind.getWorld().isChunkLoaded(behind.getBlockX() >> 4, behind.getBlockZ() >> 4)) behind = base.clone();
-        if (kind == PetKind.BAT || kind == PetKind.GHOST) behind.add(0, 1.3 + (kind == PetKind.GHOST ? Math.sin(ghostPhase) * 0.12 : 0), 0);
+        if (kind == PetKind.BAT || kind == PetKind.GHOST) behind.add(0, 1.3 + (kind == PetKind.GHOST ? GhostMotion.bob(animationTick) : 0), 0);
         else {
             // Use a nearby floor when possible, without loading chunks or pathfinding.
             for (int offset : new int[]{0, -1, 1, -2}) {
@@ -115,10 +115,11 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         return true;
     }
     private void tick() {
-        ghostPhase += 0.12;
+        animationTick++;
         for (Player owner : Bukkit.getOnlinePlayers()) {
             UUID id = owner.getUniqueId();
             var choice = preferences.get(id);
+            if (choice != null && choice.kind() != PetKind.GHOST && animationTick % 2 != 0) continue;
             if (choice == null || !choice.summoned() || owner.isDead() || owner.getGameMode() == GameMode.SPECTATOR
                     || owner.isInvisible() || !owner.hasPermission("cosmeticpets.use")) { remove(id); continue; }
             Pet pet = pets.get(id);
@@ -134,16 +135,18 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             Location ownerPosition = owner.getLocation();
             Vector ownerDelta = ownerPosition.toVector().subtract(pet.ownerLast.toVector());
             if (ownerDelta.getX() * ownerDelta.getX() + ownerDelta.getZ() * ownerDelta.getZ() > 0.0025)
-                pet.followYaw = Motion.turn(pet.followYaw, Motion.heading(ownerDelta.getX(), ownerDelta.getZ()), 24);
+                pet.followYaw = Motion.turn(pet.followYaw, Motion.heading(ownerDelta.getX(), ownerDelta.getZ()), pet.kind == PetKind.GHOST ? 12 : 24);
             pet.ownerLast = ownerPosition;
             Location target = destination(owner, pet.kind, pet.followYaw);
             if (target == null) { remove(id); continue; }
             Vector delta = target.toVector().subtract(pet.position.toVector());
             double distance = delta.length();
-            boolean catchUp = distance > 12 || pet.blockedTicks >= 20;
+            boolean ghost = pet.kind == PetKind.GHOST;
+            float turnLimit = ghost ? 12 : 24;
+            boolean catchUp = distance > 12 || pet.blockedTicks >= (ghost ? 40 : 20);
             if (catchUp) { destroy(pet); pet.position = target; pet.last = null; pet.blockedTicks = 0; }
-            else if (distance > 0.06) {
-                double step = Motion.step(distance);
+            else if (distance > (ghost ? 0.002 : 0.06)) {
+                double step = ghost ? GhostMotion.step(distance) : Motion.step(distance);
                 Location before = pet.position.clone();
                 Vector desired = delta.clone().multiply(step / distance);
                 Collision.Point from = point(before);
@@ -156,13 +159,15 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 else pet.blockedTicks = 0;
                 if (delta.getX() * delta.getX() + delta.getZ() * delta.getZ() > 0.0001)
                     pet.position.setYaw(Motion.turn(pet.position.getYaw(),
-                            Motion.heading(delta.getX(), delta.getZ()), 24));
+                            Motion.heading(delta.getX(), delta.getZ()), turnLimit));
             }
             else pet.blockedTicks = 0;
             // Match legacy relative-packet precision to prevent accumulated drift.
-            pet.position.setX(Motion.quantize(pet.position.getX()));
-            pet.position.setY(Motion.quantize(pet.position.getY()));
-            pet.position.setZ(Motion.quantize(pet.position.getZ()));
+            if (!ghost) {
+                pet.position.setX(Motion.quantize(pet.position.getX()));
+                pet.position.setY(Motion.quantize(pet.position.getY()));
+                pet.position.setZ(Motion.quantize(pet.position.getZ()));
+            }
             if (pet.kind == PetKind.GHOST) { updateGhost(owner, pet); pet.last = pet.position.clone(); continue; }
             Set<UUID> visible = new HashSet<>();
             for (Player viewer : Bukkit.getOnlinePlayers()) {
@@ -223,6 +228,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         }
     }
     private void updateGhost(Player owner, Pet pet) {
+        pet.position.setPitch(0);
         boolean hasViewer = Bukkit.getOnlinePlayers().stream().anyMatch(viewer ->
                 ghostPackLoaded.contains(viewer.getUniqueId()) && viewer.getWorld().equals(owner.getWorld())
                 && viewer.canSee(owner) && viewer.getLocation().distanceSquared(pet.position) <= 48 * 48);
@@ -243,7 +249,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 display.setItemStack(model);
                 display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
                 display.setBillboard(Display.Billboard.FIXED);
-                display.setTeleportDuration(2);
+                display.setTeleportDuration(1);
                 display.setViewRange(0.75f);
                 display.setDisplayWidth(0.9f);
                 display.setDisplayHeight(0.95f);
