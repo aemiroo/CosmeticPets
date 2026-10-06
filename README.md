@@ -1,3 +1,7 @@
+# Faster following and obstacles (1.0.4)
+
+Follow speed increased to up to 0.9 blocks per two-tick update, with faster easing. Swept checks at 0.1-block increments test the pet's body clearance and try sliding along blocked axes. Non-passable blocks are treated conservatively as full blocks, so partial blocks like slabs/stairs can cause stopping. Pets blocked for roughly two seconds teleport to a checked destination beside the owner. No full maze/pathfinding navigation is implemented. Destinations and movement avoid unloaded chunks; if no clear destination exists the pet temporarily disappears. Live-client terrain checks are still needed.
+
 # Smoother following (1.0.3)
 
 Normal movement uses relative position/rotation packets every two ticks, easing near the destination and limiting speed and turn rate. Pets face their movement direction. The following offset tracks the owner's walking direction, so looking around while standing no longer makes pets orbit. Full position teleports are reserved for catch-up beyond 12 blocks. Relative positions are quantized to avoid cumulative drift on older protocols. This is still visual following, not obstacle-aware pathfinding; terrain clipping and default-client animation limitations remain. Live 26.3/Geyser testing is required. The metadata repair and default-disabled packet setting are retained.
@@ -6,7 +10,7 @@ Normal movement uses relative position/rotation packets every two ticks, easing 
 
 The supplied Minecraft 26.3 disconnect report identified a boolean sent to bat metadata field 6, where the client expects Pose. All hardcoded entity metadata overrides have been removed for every pet. Pets now use client-default appearance: a default cat and adult zombie. They may produce client-side sounds. No metadata packets are sent by this plugin.
 
-Packet sending remains disabled by default as a recovery measure. Stop the server, remove the old CosmeticPets JAR, install only `CosmeticPets-1.0.3.jar`, and restart. Existing `players.yml` preferences are preserved. With `pet-packets-enabled: false`, the plugin disables itself before scheduling pet updates. To test the repaired visuals, set `pet-packets-enabled: true` in `plugins/CosmeticPets/config.yml` and restart. Do not use `/reload`. The reported metadata failure is addressed; live client compatibility has not been verified. Custom ghost work is paused pending validation.
+Packet sending remains disabled by default as a recovery measure. Stop the server, remove the old CosmeticPets JAR, install only `CosmeticPets-1.0.4.jar`, and restart. Existing `players.yml` preferences are preserved. With `pet-packets-enabled: false`, the plugin disables itself before scheduling pet updates. To test the repaired visuals, set `pet-packets-enabled: true` in `plugins/CosmeticPets/config.yml` and restart. Do not use `/reload`. The reported metadata failure is addressed; live client compatibility has not been verified. Custom ghost work is paused pending validation.
 
 # CosmeticPets
 
@@ -24,7 +28,7 @@ These are packet-only visual mobs, not actual server entities: no combat, collis
 
 ## Install
 
-Install PacketEvents, then download **CosmeticPets** from the latest successful **Actions → Build** run. Extract `CosmeticPets-1.0.3.jar` to `plugins/` and restart. If PacketEvents is already installed, use that installation rather than adding a second JAR.
+Install PacketEvents, then download **CosmeticPets** from the latest successful **Actions → Build** run. Extract `CosmeticPets-1.0.4.jar` to `plugins/` and restart. If PacketEvents is already installed, use that installation rather than adding a second JAR.
 
 ## Verification
 

@@ -6,7 +6,7 @@ class MotionTest {
         double distance = 4;
         for (int i = 0; i < 100; i++) {
             double step = Motion.step(distance);
-            assertTrue(step <= 0.55 && step <= distance);
+            assertTrue(step <= 0.9 && step <= distance);
             distance -= step;
         }
         assertTrue(distance < 0.001);

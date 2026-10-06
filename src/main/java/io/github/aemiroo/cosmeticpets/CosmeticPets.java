@@ -71,12 +71,29 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             // Use a nearby floor when possible, without loading chunks or pathfinding.
             for (int offset : new int[]{0, -1, 1, -2}) {
                 Location candidate = behind.clone().add(0, offset, 0);
-                if (candidate.getBlock().isPassable() && candidate.clone().add(0, 1, 0).getBlock().isPassable()
+                if (clear(candidate, kind)
                         && candidate.clone().add(0, -1, 0).getBlock().getType().isSolid()) return candidate;
             }
         }
-        if (!behind.getBlock().isPassable()) return base;
-        return behind;
+        if (clear(behind, kind)) return behind;
+        if (clear(base, kind)) return base;
+        return null;
+    }
+    private Collision.Point point(Location at) { return new Collision.Point(at.getX(), at.getY(), at.getZ()); }
+    private boolean clear(Location at, PetKind kind) {
+        double halfWidth = 0.35;
+        double height = switch (kind) { case CAT -> 0.75; case BAT -> 0.95; case ZOMBIE -> 1.95; };
+        World world = at.getWorld();
+        int minX = (int) Math.floor(at.getX() - halfWidth), maxX = (int) Math.floor(at.getX() + halfWidth);
+        int minZ = (int) Math.floor(at.getZ() - halfWidth), maxZ = (int) Math.floor(at.getZ() + halfWidth);
+        int minY = (int) Math.floor(at.getY() + 0.001), maxY = (int) Math.floor(at.getY() + height);
+        if (minY < world.getMinHeight() || maxY >= world.getMaxHeight()) return false;
+        for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) {
+            if (!world.isChunkLoaded(x >> 4, z >> 4)) return false;
+            for (int y = minY; y <= maxY; y++)
+                if (!world.getBlockAt(x, y, z).isPassable()) return false;
+        }
+        return true;
     }
     private void tick() {
         for (Player owner : Bukkit.getOnlinePlayers()) {
@@ -87,7 +104,9 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             Pet pet = pets.get(id);
             if (pet == null || pet.kind != choice.kind() || !pet.position.getWorld().equals(owner.getWorld())) {
                 remove(id);
-                pet = new Pet(choice.kind(), destination(owner, choice.kind(), owner.getLocation().getYaw()));
+                Location initial = destination(owner, choice.kind(), owner.getLocation().getYaw());
+                if (initial == null) continue;
+                pet = new Pet(choice.kind(), initial);
                 pet.ownerLast = owner.getLocation();
                 pet.followYaw = owner.getLocation().getYaw();
                 pets.put(id, pet);
@@ -98,17 +117,28 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 pet.followYaw = Motion.turn(pet.followYaw, Motion.heading(ownerDelta.getX(), ownerDelta.getZ()), 24);
             pet.ownerLast = ownerPosition;
             Location target = destination(owner, pet.kind, pet.followYaw);
+            if (target == null) { remove(id); continue; }
             Vector delta = target.toVector().subtract(pet.position.toVector());
             double distance = delta.length();
-            boolean catchUp = distance > 12;
-            if (catchUp) pet.position = target;
+            boolean catchUp = distance > 12 || pet.blockedTicks >= 20;
+            if (catchUp) { destroy(pet); pet.position = target; pet.last = null; pet.blockedTicks = 0; }
             else if (distance > 0.06) {
                 double step = Motion.step(distance);
-                pet.position.add(delta.multiply(step / distance));
+                Location before = pet.position.clone();
+                Vector desired = delta.clone().multiply(step / distance);
+                Collision.Point from = point(before);
+                Collision.Point end = from.add(desired.getX(), desired.getY(), desired.getZ());
+                Pet active = pet;
+                Collision.Point reached = Collision.slide(from, end,
+                        at -> clear(new Location(before.getWorld(), at.x(), at.y(), at.z()), active.kind));
+                pet.position.setX(reached.x()); pet.position.setY(reached.y()); pet.position.setZ(reached.z());
+                if (Collision.distance(reached, end) > 0.0025) pet.blockedTicks++;
+                else pet.blockedTicks = 0;
                 if (delta.getX() * delta.getX() + delta.getZ() * delta.getZ() > 0.0001)
                     pet.position.setYaw(Motion.turn(pet.position.getYaw(),
                             Motion.heading(delta.getX(), delta.getZ()), 24));
             }
+            else pet.blockedTicks = 0;
             // Match legacy relative-packet precision to prevent accumulated drift.
             pet.position.setX(Motion.quantize(pet.position.getX()));
             pet.position.setY(Motion.quantize(pet.position.getY()));
@@ -263,6 +293,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         final Set<UUID> viewers = new HashSet<>();
         Location position, last, ownerLast;
         float followYaw;
+        int blockedTicks;
         Pet(PetKind kind, Location position) { this.kind = kind; this.position = position; }
     }
 }
