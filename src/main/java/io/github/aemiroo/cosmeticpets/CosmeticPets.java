@@ -1,8 +1,6 @@
 package io.github.aemiroo.cosmeticpets;
 
 import com.github.retrooper.packetevents.PacketEvents;
-import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
-import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.server.*;
@@ -121,12 +119,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         var type = switch (pet.kind) { case CAT -> EntityTypes.CAT; case BAT -> EntityTypes.BAT; case ZOMBIE -> EntityTypes.ZOMBIE; };
         send(viewer, new WrapperPlayServerSpawnEntity(pet.id, Optional.of(pet.uuid), type,
                 vector(pet.position), 0, pet.position.getYaw(), pet.position.getYaw(), 0, Optional.empty()));
-        List<EntityData<?>> data = new ArrayList<>();
-        data.add(new EntityData<>(5, EntityDataTypes.BOOLEAN, true)); // silent
-        data.add(new EntityData<>(6, EntityDataTypes.BOOLEAN, true)); // no gravity
-        if (pet.kind == PetKind.CAT) data.add(new EntityData<>(19, EntityDataTypes.CAT_VARIANT, 10)); // all black
-        if (pet.kind == PetKind.ZOMBIE) data.add(new EntityData<>(16, EntityDataTypes.BOOLEAN, true)); // baby
-        send(viewer, new WrapperPlayServerEntityMetadata(pet.id, data));
+        // Use client defaults: metadata indices vary by protocol version.
+        // Never send hardcoded fields (26.3 field 6 is Pose, not a boolean).
     }
     private boolean choose(Player player, PetKind kind, boolean summoned) {
         try { preferences.set(player.getUniqueId(), new Preferences.Choice(kind, summoned)); }
@@ -227,9 +221,9 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     private static final class Menu implements InventoryHolder {
         final Inventory inventory = Bukkit.createInventory(this, 27, "Halloween Pets");
         Menu() {
-            inventory.setItem(11, icon(Material.CAT_SPAWN_EGG, "Black Cat", "Click to summon your companion."));
+            inventory.setItem(11, icon(Material.CAT_SPAWN_EGG, "Cat", "Click to summon your companion."));
             inventory.setItem(13, icon(Material.BAT_SPAWN_EGG, "Bat", "Click to summon your companion."));
-            inventory.setItem(15, icon(Material.ZOMBIE_SPAWN_EGG, "Baby Zombie", "Click to summon your companion."));
+            inventory.setItem(15, icon(Material.ZOMBIE_SPAWN_EGG, "Zombie", "Click to summon your companion."));
             inventory.setItem(21, icon(Material.LIME_DYE, "Summon", "Summon your saved pet."));
             inventory.setItem(23, icon(Material.RED_DYE, "Dismiss", "Dismiss your pet; keep your selection."));
         }

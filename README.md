@@ -1,8 +1,8 @@
-# Emergency safe mode (1.0.1)
+# Protocol disconnect repair (1.0.2)
 
-Pet visuals are disabled by default following a reported Network Protocol Error/reconnect loop. This is an interim containment build, not a packet compatibility fix. Keep `pet-packets-enabled: false`. Existing `players.yml` preferences are preserved. The plugin disables itself before scheduling pet updates or sending packets.
+The supplied Minecraft 26.3 disconnect report identified a boolean sent to bat metadata field 6, where the client expects Pose. All hardcoded entity metadata overrides have been removed for every pet. Pets now use client-default appearance: a default cat and adult zombie. They may produce client-side sounds. No metadata packets are sent by this plugin.
 
-To recover immediately, stop the server, remove the old CosmeticPets JAR and restart. Do not change PacketEvents while other plugins depend on it. Client `logs/latest.log` and corresponding server errors are needed to diagnose the packet mismatch. Custom ghost work is paused.
+Packet sending remains disabled by default as a recovery measure. Stop the server, remove the old CosmeticPets JAR, install only `CosmeticPets-1.0.2.jar`, and restart. Existing `players.yml` preferences are preserved. With `pet-packets-enabled: false`, the plugin disables itself before scheduling pet updates. To test the repaired visuals, set `pet-packets-enabled: true` in `plugins/CosmeticPets/config.yml` and restart. Do not use `/reload`. The reported metadata failure is addressed; live client compatibility has not been verified. Custom ghost work is paused pending validation.
 
 # CosmeticPets
 
@@ -10,7 +10,7 @@ Free Halloween companions for LARP SMP (Purpur 26.3). Requires **PacketEvents 2.
 
 ## Use
 
-`/pets` opens the Halloween menu. Choose a **Black Cat**, **Bat**, or **Baby Zombie**. `/pets cat`, `/pets bat`, and `/pets zombie` also select and summon companions. `/pets dismiss` hides yours while remembering the selection; `/pets summon` brings it back. Everyone has `cosmeticpets.use` by default. There are no purchases or abilities.
+`/pets` opens the Halloween menu. Choose a **Cat**, **Bat**, or **Zombie**. `/pets cat`, `/pets bat`, and `/pets zombie` also select and summon companions. `/pets dismiss` hides yours while remembering the selection; `/pets summon` brings it back. Everyone has `cosmeticpets.use` by default. There are no purchases or abilities.
 
 Selection and summon state are saved by UUID in `plugins/CosmeticPets/players.yml`. Summoned pets return on reconnect/restart and follow between worlds. They temporarily disappear while dead, invisible or spectating. One pet per player. Nearby players within 48 blocks see it if they can see the owner; vanished owners' pets are hidden from viewers for whom Bukkit canSee is false.
 
@@ -20,8 +20,8 @@ These are packet-only visual mobs, not actual server entities: no combat, collis
 
 ## Install
 
-Install PacketEvents, then download **CosmeticPets** from the latest successful **Actions → Build** run. Extract `CosmeticPets-1.0.0.jar` to `plugins/` and restart. If PacketEvents is already installed, use that installation rather than adding a second JAR.
+Install PacketEvents, then download **CosmeticPets** from the latest successful **Actions → Build** run. Extract `CosmeticPets-1.0.2.jar` to `plugins/` and restart. If PacketEvents is already installed, use that installation rather than adding a second JAR.
 
 ## Verification
 
-CI builds with `mvn verify` and tests saved preferences, independent owners, dismissed selection and invalid-file preservation. Test the menu against shift-click/number-key/offhand/drag attempts, verify reconnect/restart and world changes do not duplicate pets, and check the cat variant, bat appearance and baby zombie on your actual client. Test vanish and spectator transitions before enabling for staff accounts. Gameplay isolation follows from using no actual server entities; packet rendering still requires live-client verification.
+CI builds with `mvn verify` and tests saved preferences, independent owners, dismissed selection and invalid-file preservation. Test the menu against shift-click/number-key/offhand/drag attempts, verify reconnect/restart and world changes do not duplicate pets, and check the cat, bat and adult zombie on your actual client. Test vanish and spectator transitions before enabling for staff accounts. Gameplay isolation follows from using no actual server entities; packet rendering still requires live-client verification.
