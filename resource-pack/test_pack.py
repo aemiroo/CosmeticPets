@@ -13,6 +13,17 @@ class PackTest(unittest.TestCase):
                 texture=model['textures'][face['texture'][1:]].replace(':','/textures/')
                 self.assertIn('assets/'+texture+'.png',files)
         self.assertEqual([97,1],json.loads(files['pack.mcmeta'])['pack']['min_format'])
+    def test_all_ghost_textures_registered_in_item_atlas(self):
+        files=builder.files()
+        model=json.loads(files['assets/cosmeticpets/models/pet/ghost.json'])
+        atlas=json.loads(files['assets/minecraft/atlases/items.json'])
+        sprites={}
+        for source in atlas['sources']:
+            self.assertEqual('minecraft:single',source['type'])
+            namespace,path=source['resource'].split(':',1)
+            self.assertIn('assets/'+namespace+'/textures/'+path+'.png',files)
+            sprites[source['sprite']]=source['resource']
+        self.assertEqual(set(model['textures'].values()),set(sprites))
     def test_reproducible_original_assets(self):
         self.assertEqual(builder.files(),builder.files())
         self.assertTrue(builder.files()['assets/cosmeticpets/textures/pet/white.png'].startswith(b'\x89PNG'))

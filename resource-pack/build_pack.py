@@ -19,6 +19,10 @@ def files():
              'display': {'fixed': {'rotation':[0,0,0], 'translation':[0,0,0], 'scale':[1,1,1]}}, 'gui_light':'front'}
     result = {
         'pack.mcmeta': json.dumps({'pack':{'description':'CosmeticPets - original floating ghost', 'min_format':[97,1], 'max_format':[97,1]}}).encode(),
+        'assets/minecraft/atlases/items.json': json.dumps({'sources': [
+            {'type':'minecraft:single', 'resource':'cosmeticpets:pet/'+name,
+             'sprite':'cosmeticpets:pet/'+name} for name in ('white','dark','pink')
+        ]}).encode(),
         'assets/cosmeticpets/items/ghost.json': json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/ghost'}}).encode(),
         'assets/cosmeticpets/models/pet/ghost.json':json.dumps(model).encode(),
         'assets/cosmeticpets/textures/pet/white.png':png((236,244,250,255)),
