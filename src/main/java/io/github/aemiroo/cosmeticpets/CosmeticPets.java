@@ -119,7 +119,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                         || viewer.getLocation().distanceSquared(pet.position) > 48 * 48) continue;
                 visible.add(viewer.getUniqueId());
                 if (pet.viewers.add(viewer.getUniqueId())) spawn(viewer, pet);
-                else if (pet.last == null || pet.last.distanceSquared(pet.position) > 0.0001
+                else if (pet.last == null || pet.last.distanceSquared(pet.position) > 0
                         || pet.last.getYaw() != pet.position.getYaw())
                     move(viewer, pet, catchUp);
             }
