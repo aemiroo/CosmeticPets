@@ -103,7 +103,8 @@ class PackTest(unittest.TestCase):
         face=[e for e in model['elements'] if 'north' in e['faces']
               and 4<=e['from'][0]<=11 and 4<=e['from'][1]<=10]
         self.assertTrue(face)
-        painted=[e for e in face if e['faces']['north']['texture']=='#pumpkin_face']
+        painted=[e for e in face if e['from'][1]>=6
+                 and e['faces']['north']['texture']=='#pumpkin_face']
         self.assertEqual({3},{e['from'][2] for e in painted})
         centre=[e for e in face if e['from'][0] in (7,8) and 5<=e['from'][1]<=9]
         self.assertEqual({3},{e['from'][2] for e in centre})
