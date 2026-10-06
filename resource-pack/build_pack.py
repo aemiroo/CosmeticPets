@@ -1,5 +1,5 @@
 """Build an original voxel ghost pack without third-party image/model assets."""
-import hashlib, json, pathlib, struct, zlib, zipfile
+import hashlib, json, pathlib, struct, zlib, zipfile, math
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 def png(color):
     def chunk(kind, data):
@@ -37,6 +37,34 @@ def shell():
         if faces:
             elements.append({'from':[x,y,z],'to':[x+1,y+1,z+1],'faces':faces})
     return elements
+def pumpkin_model():
+    cells=set()
+    for x in range(1,15):
+        for y in range(2,13):
+            for z in range(1,15):
+                dx=x+0.5-8; dy=y+0.5-7.5; dz=z+0.5-8
+                angle=math.atan2(dz,dx)
+                radius=6.5*(1+0.06*math.cos(8*angle))
+                if (dx*dx+dz*dz)/(radius*radius)+(dy/5.5)**2 <= 1:
+                    cells.add((x,y,z))
+    directions={'west':(-1,0,0),'east':(1,0,0),'down':(0,-1,0),
+                'up':(0,1,0),'north':(0,0,-1),'south':(0,0,1)}
+    elements=[]
+    for x,y,z in sorted(cells):
+        shade='pumpkin_rib' if math.cos(8*math.atan2(z+0.5-8,x+0.5-8)) < -0.25 else 'pumpkin_orange'
+        faces={face:{'uv':[0,0,16,16],'texture':'#'+shade}
+               for face,(dx,dy,dz) in directions.items() if (x+dx,y+dy,z+dz) not in cells}
+        if faces:
+            elements.append({'from':[x,y,z],'to':[x+1,y+1,z+1],'faces':faces})
+    elements.extend([cube([6,12,6],[10,13,10],'pumpkin_green'),
+                     cube([7,13,7],[9,15,9],'pumpkin_stem'),
+                     cube([8,15,7],[10,16,9],'pumpkin_stem')])
+    return {'credit':'Original round ribbed pumpkin companion.',
+            'textures':{name:'cosmeticpets:pet/'+name for name in
+                        ('pumpkin_orange','pumpkin_rib','pumpkin_green','pumpkin_stem')},
+            'elements':elements,
+            'display':{'fixed':{'rotation':[0,0,0],'translation':[0,6,0],'scale':[1,1,1]}},
+            'gui_light':'front'}
 def files():
     elements = shell() + [
                 cube([5,9,2.85],[6.5,11,3],'dark'), cube([9.5,9,2.85],[11,11,3],'dark'),
@@ -45,7 +73,7 @@ def files():
     model = {'credit':'Original CosmeticPets ghost; no Sketchfab assets used.', 'textures': {x:'cosmeticpets:pet/'+x for x in ('white','dark','pink','underside')}, 'elements':elements,
              'display': {'fixed': {'rotation':[0,0,0], 'translation':[0,0,0], 'scale':[1,1,1]}}, 'gui_light':'front'}
     result = {
-        'pack.mcmeta': json.dumps({'pack':{'description':'CosmeticPets - original floating ghost', 'min_format':[97,1], 'max_format':[97,1]}}).encode(),
+        'pack.mcmeta': json.dumps({'pack':{'description':'CosmeticPets - ghost and bouncing pumpkin', 'min_format':[97,1], 'max_format':[97,1]}}).encode(),
         'assets/minecraft/atlases/items.json': json.dumps({'sources': [
             {'type':'minecraft:single', 'resource':'cosmeticpets:pet/'+name,
              'sprite':'cosmeticpets:pet/'+name} for name in ('white','dark','pink','underside')
@@ -58,6 +86,17 @@ def files():
         'assets/cosmeticpets/textures/pet/underside.png':png((205,216,229,110)),
         'LICENSE.txt': b'Original ghost model and textures: MIT License, same as the CosmeticPets repository. No third-party models or textures included.\n'
     }
+    result['assets/cosmeticpets/items/pumpkin.json']=json.dumps(
+        {'model':{'type':'minecraft:model','model':'cosmeticpets:pet/pumpkin'}}).encode()
+    result['assets/cosmeticpets/models/pet/pumpkin.json']=json.dumps(pumpkin_model()).encode()
+    colors={'pumpkin_orange':(238,123,24,255),'pumpkin_rib':(187,77,13,255),
+            'pumpkin_green':(74,101,32,255),'pumpkin_stem':(86,65,33,255)}
+    atlas=json.loads(result['assets/minecraft/atlases/items.json'])
+    for name,color in colors.items():
+        result['assets/cosmeticpets/textures/pet/'+name+'.png']=png(color)
+        atlas['sources'].append({'type':'minecraft:single','resource':'cosmeticpets:pet/'+name,
+                                 'sprite':'cosmeticpets:pet/'+name})
+    result['assets/minecraft/atlases/items.json']=json.dumps(atlas).encode()
     return result
 if __name__ == '__main__':
     output = ROOT / 'target' / 'CosmeticPets-Ghost-Pack.zip'

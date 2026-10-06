@@ -23,7 +23,7 @@ class PackTest(unittest.TestCase):
             namespace,path=source['resource'].split(':',1)
             self.assertIn('assets/'+namespace+'/textures/'+path+'.png',files)
             sprites[source['sprite']]=source['resource']
-        self.assertEqual(set(model['textures'].values()),set(sprites))
+        self.assertTrue(set(model['textures'].values()).issubset(set(sprites)))
     def test_body_png_has_partial_alpha(self):
         data=builder.files()['assets/cosmeticpets/textures/pet/white.png']
         offset=8
@@ -61,6 +61,28 @@ class PackTest(unittest.TestCase):
         for x,y,z,face in faces:
             dx,dy,dz=delta[face]
             self.assertNotIn((x+dx,y+dy,z+dz,opposite[face]),faces)
+    def test_pumpkin_assets_atlas_and_bounds(self):
+        files=builder.files()
+        model=json.loads(files['assets/cosmeticpets/models/pet/pumpkin.json'])
+        item=json.loads(files['assets/cosmeticpets/items/pumpkin.json'])
+        self.assertEqual('cosmeticpets:pet/pumpkin',item['model']['model'])
+        atlas=json.loads(files['assets/minecraft/atlases/items.json'])
+        sprites={source['sprite'] for source in atlas['sources']}
+        for texture in model['textures'].values():
+            self.assertIn(texture,sprites)
+            namespace,path=texture.split(':',1)
+            self.assertIn('assets/'+namespace+'/textures/'+path+'.png',files)
+        for element in model['elements']:
+            self.assertTrue(all(0<=a<b<=16 for a,b in zip(element['from'],element['to'])))
+        self.assertEqual([0,6,0],model['display']['fixed']['translation'])
+    def test_pumpkin_round_body_narrows_toward_top_and_bottom(self):
+        elements=builder.pumpkin_model()['elements']
+        body=[e for e in elements if any(f['texture'] in ('#pumpkin_orange','#pumpkin_rib') for f in e['faces'].values())]
+        def width(y):
+            layer=[e for e in body if e['from'][1]==y]
+            return max(e['to'][0] for e in layer)-min(e['from'][0] for e in layer)
+        self.assertLess(width(2),width(7))
+        self.assertLess(width(12),width(7))
     def test_reproducible_original_assets(self):
         self.assertEqual(builder.files(),builder.files())
         self.assertTrue(builder.files()['assets/cosmeticpets/textures/pet/white.png'].startswith(b'\x89PNG'))

@@ -16,6 +16,9 @@ import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
+import org.bukkit.util.Transformation;
+import org.joml.Vector3f;
+import org.joml.Quaternionf;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,11 +67,12 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         if (player.isOnline()) PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
     }
     private void destroy(Pet pet) {
-        if (pet.kind == PetKind.GHOST) {
+        if (pet.kind.modelled()) {
             if (pet.display != null) { pet.display.remove(); pet.display = null; }
             pet.viewers.clear();
             pet.displayLast = null;
             pet.scareTicks = 0;
+            pet.lastScaleY = 1;
             return;
         }
         for (UUID id : pet.viewers) {
@@ -101,9 +105,9 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     private Collision.Point point(Location at) { return new Collision.Point(at.getX(), at.getY(), at.getZ()); }
     private boolean clear(Location at, PetKind kind) {
-        double halfWidth = kind == PetKind.GHOST ? 0.5 : 0.35;
+        double halfWidth = kind.modelled() ? 0.5 : 0.35;
         if (kind == PetKind.GHOST) at = at.clone().add(0, -0.5, 0);
-        double height = switch (kind) { case CAT -> 0.75; case BAT -> 0.95; case GHOST -> 1.0; case ZOMBIE -> 1.95; };
+        double height = switch (kind) { case CAT -> 0.75; case BAT -> 0.95; case GHOST, PUMPKIN -> 1.0; case ZOMBIE -> 1.95; };
         World world = at.getWorld();
         int minX = (int) Math.floor(at.getX() - halfWidth), maxX = (int) Math.floor(at.getX() + halfWidth);
         int minZ = (int) Math.floor(at.getZ() - halfWidth), maxZ = (int) Math.floor(at.getZ() + halfWidth);
@@ -121,7 +125,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         for (Player owner : Bukkit.getOnlinePlayers()) {
             UUID id = owner.getUniqueId();
             var choice = preferences.get(id);
-            if (choice != null && choice.kind() != PetKind.GHOST && animationTick % 2 != 0) continue;
+            if (choice != null && !choice.kind().modelled() && animationTick % 2 != 0) continue;
             if (choice == null || !choice.summoned() || owner.isDead() || owner.getGameMode() == GameMode.SPECTATOR
                     || owner.isInvisible() || !owner.hasPermission("cosmeticpets.use")) { remove(id); continue; }
             Pet pet = pets.get(id);
@@ -137,13 +141,13 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             Location ownerPosition = owner.getLocation();
             Vector ownerDelta = ownerPosition.toVector().subtract(pet.ownerLast.toVector());
             if (ownerDelta.getX() * ownerDelta.getX() + ownerDelta.getZ() * ownerDelta.getZ() > 0.0025)
-                pet.followYaw = Motion.turn(pet.followYaw, Motion.heading(ownerDelta.getX(), ownerDelta.getZ()), pet.kind == PetKind.GHOST ? 12 : 24);
+                pet.followYaw = Motion.turn(pet.followYaw, Motion.heading(ownerDelta.getX(), ownerDelta.getZ()), pet.kind.modelled() ? 12 : 24);
             pet.ownerLast = ownerPosition;
             Location target = destination(owner, pet.kind, pet.followYaw);
             if (target == null) { remove(id); continue; }
             Vector delta = target.toVector().subtract(pet.position.toVector());
             double distance = delta.length();
-            boolean ghost = pet.kind == PetKind.GHOST;
+            boolean ghost = pet.kind.modelled();
             float turnLimit = ghost ? 12 : 24;
             boolean catchUp = distance > 12 || pet.blockedTicks >= (ghost ? 40 : 20);
             if (catchUp) { destroy(pet); pet.position = target; pet.last = null; pet.blockedTicks = 0; }
@@ -170,7 +174,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 pet.position.setY(Motion.quantize(pet.position.getY()));
                 pet.position.setZ(Motion.quantize(pet.position.getZ()));
             }
-            if (pet.kind == PetKind.GHOST) { updateGhost(owner, pet); pet.last = pet.position.clone(); continue; }
+            if (pet.kind.modelled()) { updateModel(owner, pet); pet.last = pet.position.clone(); continue; }
             Set<UUID> visible = new HashSet<>();
             for (Player viewer : Bukkit.getOnlinePlayers()) {
                 if (!viewer.getWorld().equals(owner.getWorld()) || !viewer.canSee(owner)
@@ -201,7 +205,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     private Vector3d vector(Location position) { return new Vector3d(position.getX(), position.getY(), position.getZ()); }
     private void spawn(Player viewer, Pet pet) {
-        var type = switch (pet.kind) { case CAT -> EntityTypes.CAT; case BAT -> EntityTypes.BAT; case ZOMBIE -> EntityTypes.ZOMBIE; case GHOST -> throw new IllegalStateException("Ghosts use native displays"); };
+        var type = switch (pet.kind) { case CAT -> EntityTypes.CAT; case BAT -> EntityTypes.BAT; case ZOMBIE -> EntityTypes.ZOMBIE; case GHOST, PUMPKIN -> throw new IllegalStateException("Ghosts use native displays"); };
         send(viewer, new WrapperPlayServerSpawnEntity(pet.id, Optional.of(pet.uuid), type,
                 vector(pet.position), 0, pet.position.getYaw(), pet.position.getYaw(), 0, Optional.empty()));
         // Use client defaults: metadata indices vary by protocol version.
@@ -212,7 +216,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 "https://github.com/aemiroo/CosmeticPets/releases/download/ghost-pack/CosmeticPets-Ghost-Pack.zip");
         if (ghostPackHash == null || url == null || url.isBlank()) return;
         player.addResourcePack(GHOST_PACK_ID, url, ghostPackHash,
-                "Optional pack for the cosmetic ghost companion", false);
+                "Optional pack for the ghost and bouncing pumpkin companions", false);
     }
     @EventHandler public void join(PlayerJoinEvent event) {
         getServer().getScheduler().runTaskLater(this, () -> {
@@ -229,7 +233,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             forgetViewer(event.getPlayer());
         }
     }
-    private void updateGhost(Player owner, Pet pet) {
+    private void updateModel(Player owner, Pet pet) {
         pet.position.setPitch(0);
         boolean hasViewer = Bukkit.getOnlinePlayers().stream().anyMatch(viewer ->
                 ghostPackLoaded.contains(viewer.getUniqueId()) && viewer.getWorld().equals(owner.getWorld())
@@ -237,10 +241,11 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         if (!hasViewer) { destroy(pet); return; }
         if (pet.display == null || !pet.display.isValid()) {
             pet.viewers.clear();
+            pet.lastScaleY = 1;
             if (pet.display != null) pet.display.remove();
             ItemStack model = new ItemStack(Material.PAPER);
             ItemMeta meta = model.getItemMeta();
-            meta.setItemModel(new NamespacedKey("cosmeticpets", "ghost"));
+            meta.setItemModel(new NamespacedKey("cosmeticpets", pet.kind == PetKind.GHOST ? "ghost" : "pumpkin"));
             model.setItemMeta(meta);
             pet.display = pet.position.getWorld().spawn(pet.position, ItemDisplay.class, display -> {
                 display.setVisibleByDefault(false);
@@ -251,14 +256,15 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 display.setItemStack(model);
                 display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
                 display.setBillboard(Display.Billboard.FIXED);
-                display.setBrightness(new Display.Brightness(15, 15));
+                if (pet.kind == PetKind.GHOST) display.setBrightness(new Display.Brightness(15, 15));
+                display.setInterpolationDuration(1);
                 display.setTeleportDuration(1);
                 display.setViewRange(0.75f);
                 display.setDisplayWidth(0.9f);
                 display.setDisplayHeight(0.95f);
             });
         }
-        if (animationTick % 20 == 0 && pet.scareTicks == 0
+        if (pet.kind == PetKind.GHOST && animationTick % 20 == 0 && pet.scareTicks == 0
                 && ghostPackLoaded.contains(owner.getUniqueId())
                 && owner.getLocation().distanceSquared(pet.position) <= 16
                 && RareScare.roll(java.util.concurrent.ThreadLocalRandom.current()::nextInt)) {
@@ -272,6 +278,22 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             Location hop = displayed.clone().add(0, RareScare.hop(pet.scareTicks), 0);
             if (clear(hop, PetKind.GHOST)) displayed = hop;
             pet.scareTicks--;
+        }
+        if (pet.kind == PetKind.PUMPKIN) {
+            long tick = animationTick + Math.floorMod(owner.getUniqueId().getLeastSignificantBits(), PumpkinMotion.CYCLE);
+            Location hop = displayed.clone().add(0, PumpkinMotion.hop(tick), 0);
+            float scaleY = 1;
+            if (clear(hop, PetKind.PUMPKIN)) {
+                displayed = hop;
+                scaleY = PumpkinMotion.scaleY(tick);
+            }
+            if (Math.abs(pet.lastScaleY - scaleY) > 0.0001f) {
+                float scaleXZ = PumpkinMotion.scaleXZ(scaleY);
+                pet.display.setInterpolationDelay(0);
+                pet.display.setTransformation(new Transformation(new Vector3f(), new Quaternionf(),
+                        new Vector3f(scaleXZ, scaleY, scaleXZ), new Quaternionf()));
+                pet.lastScaleY = scaleY;
+            }
         }
         if (pet.displayLast == null || pet.displayLast.distanceSquared(displayed) > 0
                 || pet.displayLast.getYaw() != displayed.getYaw()) pet.display.teleport(displayed);
@@ -294,8 +316,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         try { preferences.set(player.getUniqueId(), new Preferences.Choice(kind, summoned)); }
         catch (IOException e) { player.sendMessage(ChatColor.RED + "Could not save your pet preference. Please try again."); return false; }
         remove(player.getUniqueId());
-        if (kind == PetKind.GHOST && summoned && !ghostPackLoaded.contains(player.getUniqueId()))
-            player.sendMessage(ChatColor.YELLOW + "Accept the optional ghost resource pack to see your ghost.");
+        if (kind.modelled() && summoned && !ghostPackLoaded.contains(player.getUniqueId()))
+            player.sendMessage(ChatColor.YELLOW + "Accept the optional pet resource pack to see this companion.");
         player.sendMessage(ChatColor.GOLD + "[Pets] " + ChatColor.GRAY + (summoned ? kind.label + " summoned." : "Pet dismissed."));
         return true;
     }
@@ -310,6 +332,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             case "bat" -> choose(player, PetKind.BAT, true);
             case "zombie" -> choose(player, PetKind.ZOMBIE, true);
             case "ghost" -> choose(player, PetKind.GHOST, true);
+            case "pumpkin" -> choose(player, PetKind.PUMPKIN, true);
             case "summon", "dismiss" -> {
                 if (choice == null) player.sendMessage(ChatColor.YELLOW + "Choose a pet first with /pets.");
                 else choose(player, choice.kind(), args[0].equalsIgnoreCase("summon"));
@@ -320,14 +343,14 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length != 1 || !sender.hasPermission("cosmeticpets.use")) return List.of();
-        return List.of("cat", "bat", "zombie", "ghost", "summon", "dismiss").stream()
+        return List.of("cat", "bat", "zombie", "ghost", "pumpkin", "summon", "dismiss").stream()
                 .filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
     }
     private void forgetViewer(Player player) {
         for (Pet pet : pets.values()) {
             if (pet.viewers.remove(player.getUniqueId())) {
                 if (pet.display != null) player.hideEntity(this, pet.display);
-                else if (pet.kind != PetKind.GHOST) send(player, new WrapperPlayServerDestroyEntities(pet.id));
+                else if (!pet.kind.modelled()) send(player, new WrapperPlayServerDestroyEntities(pet.id));
             }
         }
     }
@@ -361,6 +384,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         if (!player.hasPermission("cosmeticpets.use")) return;
         if (event.getClick() != ClickType.LEFT && event.getClick() != ClickType.RIGHT) return;
         switch (event.getRawSlot()) {
+            case 9 -> choose(player, PetKind.PUMPKIN, true);
             case 11 -> choose(player, PetKind.CAT, true);
             case 13 -> choose(player, PetKind.BAT, true);
             case 15 -> choose(player, PetKind.ZOMBIE, true);
@@ -396,6 +420,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     private static final class Menu implements InventoryHolder {
         final Inventory inventory = Bukkit.createInventory(this, 27, "Halloween Pets");
         Menu() {
+            inventory.setItem(9, icon(Material.PUMPKIN, "Pumpkin", "A bouncing companion; requires the pet pack."));
             inventory.setItem(11, icon(Material.CAT_SPAWN_EGG, "Cat", "Click to summon your companion."));
             inventory.setItem(13, icon(Material.BAT_SPAWN_EGG, "Bat", "Click to summon your companion."));
             inventory.setItem(15, icon(Material.ZOMBIE_SPAWN_EGG, "Zombie", "Click to summon your companion."));
@@ -412,6 +437,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         ItemDisplay display;
         Location displayLast;
         int scareTicks;
+        float lastScaleY = 1;
         final Set<UUID> viewers = new HashSet<>();
         Location position, last, ownerLast;
         float followYaw;
