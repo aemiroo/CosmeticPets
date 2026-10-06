@@ -38,7 +38,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             getServer().getPluginManager().disablePlugin(this); return;
         }
         getServer().getPluginManager().registerEvents(this, this);
-        interval = 5;
+        interval = 2;
         getServer().getScheduler().runTaskTimer(this, this::tick, 1L, interval);
     }
     @Override public void onDisable() {
@@ -61,9 +61,9 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         Pet pet = pets.remove(owner);
         if (pet != null) destroy(pet);
     }
-    private Location destination(Player owner, PetKind kind) {
+    private Location destination(Player owner, PetKind kind, float followYaw) {
         Location base = owner.getLocation();
-        double angle = Math.toRadians(base.getYaw());
+        double angle = Math.toRadians(followYaw);
         Location behind = base.clone().add(Math.sin(angle) * 1.6, 0, -Math.cos(angle) * 1.6);
         if (!behind.getWorld().isChunkLoaded(behind.getBlockX() >> 4, behind.getBlockZ() >> 4)) behind = base.clone();
         if (kind == PetKind.BAT) behind.add(0, 1.3, 0);
@@ -87,15 +87,32 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             Pet pet = pets.get(id);
             if (pet == null || pet.kind != choice.kind() || !pet.position.getWorld().equals(owner.getWorld())) {
                 remove(id);
-                pet = new Pet(choice.kind(), destination(owner, choice.kind()));
+                pet = new Pet(choice.kind(), destination(owner, choice.kind(), owner.getLocation().getYaw()));
+                pet.ownerLast = owner.getLocation();
+                pet.followYaw = owner.getLocation().getYaw();
                 pets.put(id, pet);
             }
-            Location target = destination(owner, pet.kind);
+            Location ownerPosition = owner.getLocation();
+            Vector ownerDelta = ownerPosition.toVector().subtract(pet.ownerLast.toVector());
+            if (ownerDelta.getX() * ownerDelta.getX() + ownerDelta.getZ() * ownerDelta.getZ() > 0.0025)
+                pet.followYaw = Motion.turn(pet.followYaw, Motion.heading(ownerDelta.getX(), ownerDelta.getZ()), 24);
+            pet.ownerLast = ownerPosition;
+            Location target = destination(owner, pet.kind, pet.followYaw);
             Vector delta = target.toVector().subtract(pet.position.toVector());
             double distance = delta.length();
-            if (distance > 8) pet.position = target;
-            else if (distance > 0.15) pet.position.add(delta.multiply(Math.min(1, 1.5 / distance)));
-            pet.position.setYaw(owner.getLocation().getYaw());
+            boolean catchUp = distance > 12;
+            if (catchUp) pet.position = target;
+            else if (distance > 0.06) {
+                double step = Motion.step(distance);
+                pet.position.add(delta.multiply(step / distance));
+                if (delta.getX() * delta.getX() + delta.getZ() * delta.getZ() > 0.0001)
+                    pet.position.setYaw(Motion.turn(pet.position.getYaw(),
+                            Motion.heading(delta.getX(), delta.getZ()), 24));
+            }
+            // Match legacy relative-packet precision to prevent accumulated drift.
+            pet.position.setX(Motion.quantize(pet.position.getX()));
+            pet.position.setY(Motion.quantize(pet.position.getY()));
+            pet.position.setZ(Motion.quantize(pet.position.getZ()));
             Set<UUID> visible = new HashSet<>();
             for (Player viewer : Bukkit.getOnlinePlayers()) {
                 if (!viewer.getWorld().equals(owner.getWorld()) || !viewer.canSee(owner)
@@ -104,7 +121,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 if (pet.viewers.add(viewer.getUniqueId())) spawn(viewer, pet);
                 else if (pet.last == null || pet.last.distanceSquared(pet.position) > 0.0001
                         || pet.last.getYaw() != pet.position.getYaw())
-                    send(viewer, new WrapperPlayServerEntityTeleport(pet.id, vector(pet.position), pet.position.getYaw(), 0, pet.kind != PetKind.BAT));
+                    move(viewer, pet, catchUp);
             }
             for (UUID viewerId : new HashSet<>(pet.viewers)) if (!visible.contains(viewerId)) {
                 Player viewer = Bukkit.getPlayer(viewerId);
@@ -112,6 +129,16 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 pet.viewers.remove(viewerId);
             }
             pet.last = pet.position.clone();
+        }
+    }
+    private void move(Player viewer, Pet pet, boolean catchUp) {
+        if (catchUp || pet.last == null) {
+            send(viewer, new WrapperPlayServerEntityTeleport(pet.id, vector(pet.position),
+                    pet.position.getYaw(), 0, pet.kind != PetKind.BAT));
+        } else {
+            send(viewer, new WrapperPlayServerEntityRelativeMoveAndRotation(pet.id,
+                    pet.position.getX() - pet.last.getX(), pet.position.getY() - pet.last.getY(),
+                    pet.position.getZ() - pet.last.getZ(), pet.position.getYaw(), 0, pet.kind != PetKind.BAT));
         }
     }
     private Vector3d vector(Location position) { return new Vector3d(position.getX(), position.getY(), position.getZ()); }
@@ -234,7 +261,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         final UUID uuid = UUID.randomUUID();
         final PetKind kind;
         final Set<UUID> viewers = new HashSet<>();
-        Location position, last;
+        Location position, last, ownerLast;
+        float followYaw;
         Pet(PetKind kind, Location position) { this.kind = kind; this.position = position; }
     }
 }

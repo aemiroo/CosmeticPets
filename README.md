@@ -1,8 +1,12 @@
+# Smoother following (1.0.3)
+
+Normal movement uses relative position/rotation packets every two ticks, easing near the destination and limiting speed and turn rate. Pets face their movement direction. The following offset tracks the owner's walking direction, so looking around while standing no longer makes pets orbit. Full position teleports are reserved for catch-up beyond 12 blocks. Relative positions are quantized to avoid cumulative drift on older protocols. This is still visual following, not obstacle-aware pathfinding; terrain clipping and default-client animation limitations remain. Live 26.3/Geyser testing is required. The metadata repair and default-disabled packet setting are retained.
+
 # Protocol disconnect repair (1.0.2)
 
 The supplied Minecraft 26.3 disconnect report identified a boolean sent to bat metadata field 6, where the client expects Pose. All hardcoded entity metadata overrides have been removed for every pet. Pets now use client-default appearance: a default cat and adult zombie. They may produce client-side sounds. No metadata packets are sent by this plugin.
 
-Packet sending remains disabled by default as a recovery measure. Stop the server, remove the old CosmeticPets JAR, install only `CosmeticPets-1.0.2.jar`, and restart. Existing `players.yml` preferences are preserved. With `pet-packets-enabled: false`, the plugin disables itself before scheduling pet updates. To test the repaired visuals, set `pet-packets-enabled: true` in `plugins/CosmeticPets/config.yml` and restart. Do not use `/reload`. The reported metadata failure is addressed; live client compatibility has not been verified. Custom ghost work is paused pending validation.
+Packet sending remains disabled by default as a recovery measure. Stop the server, remove the old CosmeticPets JAR, install only `CosmeticPets-1.0.3.jar`, and restart. Existing `players.yml` preferences are preserved. With `pet-packets-enabled: false`, the plugin disables itself before scheduling pet updates. To test the repaired visuals, set `pet-packets-enabled: true` in `plugins/CosmeticPets/config.yml` and restart. Do not use `/reload`. The reported metadata failure is addressed; live client compatibility has not been verified. Custom ghost work is paused pending validation.
 
 # CosmeticPets
 
@@ -16,11 +20,11 @@ Selection and summon state are saved by UUID in `plugins/CosmeticPets/players.ym
 
 ## Cosmetic behavior
 
-These are packet-only visual mobs, not actual server entities: no combat, collision, item drops, experience, pressure plates, breeding, mob AI reactions or item pickup. Player interaction packets cannot act on them because their IDs do not belong to server entities. They follow using visual position updates every five ticks, with a short catch-up teleport when far away. Bats float beside the owner. Ground pets use nearby floor space when possible; movement is visual rather than AI pathfinding and can clip on complex terrain. No chunks are deliberately loaded for pets. All visuals are removed when the plugin disables or the owner leaves. No world entity cleanup is needed.
+These are packet-only visual mobs, not actual server entities: no combat, collision, item drops, experience, pressure plates, breeding, mob AI reactions or item pickup. Player interaction packets cannot act on them because their IDs do not belong to server entities. They follow using visual position updates every two ticks, with a short catch-up teleport when far away. Bats float beside the owner. Ground pets use nearby floor space when possible; movement is visual rather than AI pathfinding and can clip on complex terrain. No chunks are deliberately loaded for pets. All visuals are removed when the plugin disables or the owner leaves. No world entity cleanup is needed.
 
 ## Install
 
-Install PacketEvents, then download **CosmeticPets** from the latest successful **Actions → Build** run. Extract `CosmeticPets-1.0.2.jar` to `plugins/` and restart. If PacketEvents is already installed, use that installation rather than adding a second JAR.
+Install PacketEvents, then download **CosmeticPets** from the latest successful **Actions → Build** run. Extract `CosmeticPets-1.0.3.jar` to `plugins/` and restart. If PacketEvents is already installed, use that installation rather than adding a second JAR.
 
 ## Verification
 
