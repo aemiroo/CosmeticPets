@@ -1,0 +1,3 @@
+# Emergency safe mode following a client Network Protocol Error report.
+# Leave false until the packet compatibility issue has been diagnosed.
+pet-packets-enabled: false

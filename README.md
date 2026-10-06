@@ -1,3 +1,9 @@
+# Emergency safe mode (1.0.1)
+
+Pet visuals are disabled by default following a reported Network Protocol Error/reconnect loop. This is an interim containment build, not a packet compatibility fix. Keep `pet-packets-enabled: false`. Existing `players.yml` preferences are preserved. The plugin disables itself before scheduling pet updates or sending packets.
+
+To recover immediately, stop the server, remove the old CosmeticPets JAR and restart. Do not change PacketEvents while other plugins depend on it. Client `logs/latest.log` and corresponding server errors are needed to diagnose the packet mismatch. Custom ghost work is paused.
+
 # CosmeticPets
 
 Free Halloween companions for LARP SMP (Purpur 26.3). Requires **PacketEvents 2.14.0 or newer**. No client mods or resource packs. Built with Java 17; the server itself needs the Java version required by Purpur. Folia is not supported. Java-client visuals require in-game validation; Geyser/Bedrock visuals are not verified.

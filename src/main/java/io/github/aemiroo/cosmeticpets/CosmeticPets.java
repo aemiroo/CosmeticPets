@@ -28,6 +28,12 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     private int interval;
 
     @Override public void onEnable() {
+        saveDefaultConfig();
+        if (!getConfig().getBoolean("pet-packets-enabled", false)) {
+            getLogger().warning("CosmeticPets is in emergency safe mode; no pet packets will be sent.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
         try { preferences = new Preferences(getDataFolder().toPath().resolve("players.yml")); }
         catch (IOException e) {
             getLogger().severe("Could not load players.yml. Correct or restore it before enabling CosmeticPets.");
