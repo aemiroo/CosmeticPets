@@ -1,3 +1,5 @@
-# Emergency safe mode following a client Network Protocol Error report.
-# Leave false until the packet compatibility issue has been diagnosed.
+# Set true to enable pet visuals after installing a tested build.
 pet-packets-enabled: false
+ghost:
+  # Optional Java 26.3 pack. Players may decline without being kicked.
+  resource-pack-url: "https://github.com/aemiroo/CosmeticPets/releases/download/ghost-pack/CosmeticPets-Ghost-Pack.zip"

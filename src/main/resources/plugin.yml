@@ -1,13 +1,13 @@
 name: CosmeticPets
-version: 1.0.4
+version: 1.1.0
 main: io.github.aemiroo.cosmeticpets.CosmeticPets
-api-version: '1.20'
+api-version: '1.21'
 depend: [packetevents]
 description: Free cosmetic Halloween companions.
 commands:
   pets:
     description: Choose, summon or dismiss your cosmetic pet
-    usage: /pets [cat|bat|zombie|summon|dismiss]
+    usage: /pets [cat|bat|zombie|ghost|summon|dismiss]
     permission: cosmeticpets.use
 permissions:
   cosmeticpets.use:

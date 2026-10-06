@@ -18,6 +18,15 @@ class PreferencesTest {
         assertEquals(new Preferences.Choice(PetKind.BAT, true), reloaded.get(two));
         assertNull(reloaded.get(UUID.randomUUID()));
     }
+    @Test void ghostChoiceSurvivesRestartAndDismissal() throws Exception {
+        Path file = directory.resolve("players.yml");
+        UUID owner = UUID.randomUUID();
+        var store = new Preferences(file);
+        store.set(owner, new Preferences.Choice(PetKind.GHOST, true));
+        assertEquals(new Preferences.Choice(PetKind.GHOST, true), new Preferences(file).get(owner));
+        store.set(owner, new Preferences.Choice(PetKind.GHOST, false));
+        assertEquals(new Preferences.Choice(PetKind.GHOST, false), new Preferences(file).get(owner));
+    }
     @Test void invalidPreferenceFailsInsteadOfOverwritingSavedFile() throws Exception {
         Path file = directory.resolve("players.yml");
         String content = UUID.randomUUID() + ":\n  pet: dragon\n  summoned: true\n";
