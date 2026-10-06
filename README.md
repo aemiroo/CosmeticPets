@@ -58,4 +58,4 @@ CI checks original pack model/texture references and bounds, builds the reproduc
 
 ## Bedrock / Geyser
 
-Version 1.2.1 also builds an experimental Bedrock pack for the ghost and pumpkin, plus both mapping files. See [BEDROCK.md](BEDROCK.md) for required GeyserDisplayEntity installation and setup. Build checks pass; live Bedrock rendering still needs testing.
+Version 1.2.2 also builds an experimental Bedrock pack for the ghost and pumpkin, plus both mapping files. See [BEDROCK.md](BEDROCK.md) for required GeyserDisplayEntity installation and setup. Build checks pass; live Bedrock rendering still needs testing.

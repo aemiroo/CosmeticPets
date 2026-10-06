@@ -83,6 +83,38 @@ class PackTest(unittest.TestCase):
             return max(e['to'][0] for e in layer)-min(e['from'][0] for e in layer)
         self.assertLess(width(2),width(7))
         self.assertLess(width(12),width(7))
+    def test_pumpkin_has_eyes_and_smile_on_existing_front_faces(self):
+        model=builder.pumpkin_model()
+        painted={(e['from'][0],e['from'][1]) for e in model['elements']
+                 if e['faces'].get('north',{}).get('texture')=='#pumpkin_face'}
+        expected={(x,y) for x in (4,5,10,11) for y in (8,9)}
+        expected |= {(x,5) for x in range(6,10)} | {(5,6),(10,6)}
+        self.assertEqual(expected,painted)
+        for element in model['elements']:
+            for face,definition in element['faces'].items():
+                if definition['texture']=='#pumpkin_face':
+                    self.assertEqual('north',face)
+
+    def test_pumpkin_union_has_no_duplicate_or_internal_faces(self):
+        model=builder.pumpkin_model()
+        seen=set()
+        delta={'west':(-1,0,0),'east':(1,0,0),'down':(0,-1,0),'up':(0,1,0),
+               'north':(0,0,-1),'south':(0,0,1)}
+        opposite={'west':'east','east':'west','down':'up','up':'down','north':'south','south':'north'}
+        for element in model['elements']:
+            x,y,z=element['from']
+            self.assertEqual([x+1,y+1,z+1],element['to'])
+            for face in element['faces']:
+                key=(x,y,z,face)
+                self.assertNotIn(key,seen)
+                seen.add(key)
+        for x,y,z,face in seen:
+            dx,dy,dz=delta[face]
+            self.assertNotIn((x+dx,y+dy,z+dz,opposite[face]),seen)
+        green_tops=[e for e in model['elements'] if e['from'][1]==12
+                     and e['faces'].get('up',{}).get('texture')=='#pumpkin_green']
+        self.assertTrue(green_tops)
+
     def test_reproducible_original_assets(self):
         self.assertEqual(builder.files(),builder.files())
         self.assertTrue(builder.files()['assets/cosmeticpets/textures/pet/white.png'].startswith(b'\x89PNG'))

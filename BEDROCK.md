@@ -32,7 +32,7 @@ with optional floodgate. Geyser does not automatically convert Java resource pac
 
    Requiring the packs ensures that a Bedrock player who reaches the Java server has
    downloaded the pack. This changes Geyser's pack policy for **all** its packs.
-5. Install CosmeticPets 1.2.1 and add this section to `plugins/CosmeticPets/config.yml`:
+5. Install CosmeticPets 1.2.2 and add this section to `plugins/CosmeticPets/config.yml`:
 
    ```yaml
    bedrock:

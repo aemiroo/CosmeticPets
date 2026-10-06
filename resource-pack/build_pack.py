@@ -47,21 +47,37 @@ def pumpkin_model():
                 radius=6.5*(1+0.06*math.cos(8*angle))
                 if (dx*dx+dz*dz)/(radius*radius)+(dy/5.5)**2 <= 1:
                     cells.add((x,y,z))
+    # One solid union: the green cap intersects the orange body at Y=12.
+    # Emitting those as separate boxes produces coplanar top faces and flicker.
+    materials = {cell: ('pumpkin_rib'
+                 if math.cos(8*math.atan2(cell[2]+0.5-8,cell[0]+0.5-8)) < -0.25
+                 else 'pumpkin_orange') for cell in cells}
+    for start,end,material in (
+            ([6,12,6],[10,13,10],'pumpkin_green'),
+            ([7,13,7],[9,15,9],'pumpkin_stem'),
+            ([8,15,7],[10,16,9],'pumpkin_stem')):
+        for x in range(start[0],end[0]):
+            for y in range(start[1],end[1]):
+                for z in range(start[2],end[2]):
+                    materials[x,y,z] = material
+    cells = set(materials)
+    # Paint the exposed front faces, following the pumpkin's curved surface.
+    # No thin overlay planes: the eyes and smile cannot z-fight with the rind.
+    eyes = {(x,y) for x in (4,5,10,11) for y in (8,9)}
+    smile = {(x,5) for x in range(6,10)} | {(5,6),(10,6)}
     directions={'west':(-1,0,0),'east':(1,0,0),'down':(0,-1,0),
                 'up':(0,1,0),'north':(0,0,-1),'south':(0,0,1)}
     elements=[]
     for x,y,z in sorted(cells):
-        shade='pumpkin_rib' if math.cos(8*math.atan2(z+0.5-8,x+0.5-8)) < -0.25 else 'pumpkin_orange'
-        faces={face:{'uv':[0,0,16,16],'texture':'#'+shade}
+        shade=materials[x,y,z]
+        faces={face:{'uv':[0,0,16,16],'texture':'#'+(
+                   'pumpkin_face' if face=='north' and (x,y) in eyes | smile else shade)}
                for face,(dx,dy,dz) in directions.items() if (x+dx,y+dy,z+dz) not in cells}
         if faces:
             elements.append({'from':[x,y,z],'to':[x+1,y+1,z+1],'faces':faces})
-    elements.extend([cube([6,12,6],[10,13,10],'pumpkin_green'),
-                     cube([7,13,7],[9,15,9],'pumpkin_stem'),
-                     cube([8,15,7],[10,16,9],'pumpkin_stem')])
     return {'credit':'Original round ribbed pumpkin companion.',
             'textures':{name:'cosmeticpets:pet/'+name for name in
-                        ('pumpkin_orange','pumpkin_rib','pumpkin_green','pumpkin_stem')},
+                        ('pumpkin_orange','pumpkin_rib','pumpkin_green','pumpkin_stem','pumpkin_face')},
             'elements':elements,
             'display':{'fixed':{'rotation':[0,0,0],'translation':[0,6,0],'scale':[1,1,1]}},
             'gui_light':'front'}
@@ -90,7 +106,8 @@ def files():
         {'model':{'type':'minecraft:model','model':'cosmeticpets:pet/pumpkin'}}).encode()
     result['assets/cosmeticpets/models/pet/pumpkin.json']=json.dumps(pumpkin_model()).encode()
     colors={'pumpkin_orange':(238,123,24,255),'pumpkin_rib':(187,77,13,255),
-            'pumpkin_green':(74,101,32,255),'pumpkin_stem':(86,65,33,255)}
+            'pumpkin_green':(74,101,32,255),'pumpkin_stem':(86,65,33,255),
+            'pumpkin_face':(49,27,19,255)}
     atlas=json.loads(result['assets/minecraft/atlases/items.json'])
     for name,color in colors.items():
         result['assets/cosmeticpets/textures/pet/'+name+'.png']=png(color)
