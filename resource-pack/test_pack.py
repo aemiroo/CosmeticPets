@@ -87,13 +87,28 @@ class PackTest(unittest.TestCase):
         model=builder.pumpkin_model()
         painted={(e['from'][0],e['from'][1]) for e in model['elements']
                  if e['faces'].get('north',{}).get('texture')=='#pumpkin_face'}
-        expected={(x,y) for x in (4,5,10,11) for y in (8,9)}
-        expected |= {(x,5) for x in range(6,10)} | {(5,6),(10,6)}
+        expected={(5,10),(10,10),(5,9),(6,9),(9,9),(10,9)}
+        expected |= {(x,8) for x in (4,5,6,9,10,11)}
+        expected |= {(7,7),(8,7),(7,6)}
+        expected |= {(x,4) for x in range(4,12) if x not in (6,9)}
+        expected |= {(x,3) for x in range(5,11)} | {(4,5),(11,5)}
         self.assertEqual(expected,painted)
         for element in model['elements']:
             for face,definition in element['faces'].items():
                 if definition['texture']=='#pumpkin_face':
                     self.assertEqual('north',face)
+
+    def test_pumpkin_face_has_no_protruding_centre_rib(self):
+        model=builder.pumpkin_model()
+        face=[e for e in model['elements'] if 'north' in e['faces']
+              and 4<=e['from'][0]<=11 and 4<=e['from'][1]<=10]
+        self.assertTrue(face)
+        painted=[e for e in face if e['faces']['north']['texture']=='#pumpkin_face']
+        self.assertEqual({3},{e['from'][2] for e in painted})
+        centre=[e for e in face if e['from'][0] in (7,8) and 5<=e['from'][1]<=9]
+        self.assertEqual({3},{e['from'][2] for e in centre})
+        self.assertTrue(all(e['faces']['north']['texture'] in
+                           ('#pumpkin_orange','#pumpkin_face') for e in centre))
 
     def test_pumpkin_union_has_no_duplicate_or_internal_faces(self):
         model=builder.pumpkin_model()

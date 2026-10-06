@@ -44,9 +44,13 @@ def pumpkin_model():
             for z in range(1,15):
                 dx=x+0.5-8; dy=y+0.5-7.5; dz=z+0.5-8
                 angle=math.atan2(dz,dx)
-                radius=6.5*(1+0.06*math.cos(8*angle))
+                radius=6.5*(1+0.025*math.cos(8*angle))
                 if (dx*dx+dz*dz)/(radius*radius)+(dy/5.5)**2 <= 1:
                     cells.add((x,y,z))
+    # A shallow, flat face area removes the central protruding lobe while
+    # retaining the round silhouette and ribbing around the sides and back.
+    cells = {cell for cell in cells
+             if not (4 <= cell[0] <= 11 and 4 <= cell[1] <= 10 and cell[2] < 3)}
     # One solid union: the green cap intersects the orange body at Y=12.
     # Emitting those as separate boxes produces coplanar top faces and flicker.
     materials = {cell: ('pumpkin_rib'
@@ -63,15 +67,22 @@ def pumpkin_model():
     cells = set(materials)
     # Paint the exposed front faces, following the pumpkin's curved surface.
     # No thin overlay planes: the eyes and smile cannot z-fight with the rind.
-    eyes = {(x,y) for x in (4,5,10,11) for y in (8,9)}
-    smile = {(x,5) for x in range(6,10)} | {(5,6),(10,6)}
+    # Stepped triangular eyes, a small inverted nose and a toothy grin.
+    eyes = {(5,10),(10,10),(5,9),(6,9),(9,9),(10,9)}
+    eyes |= {(x,8) for x in (4,5,6,9,10,11)}
+    nose = {(7,7),(8,7),(7,6)}
+    smile = {(x,4) for x in range(4,12) if x not in (6,9)}
+    smile |= {(x,3) for x in range(5,11)} | {(4,5),(11,5)}
+    face_pixels = eyes | nose | smile
     directions={'west':(-1,0,0),'east':(1,0,0),'down':(0,-1,0),
                 'up':(0,1,0),'north':(0,0,-1),'south':(0,0,1)}
     elements=[]
     for x,y,z in sorted(cells):
         shade=materials[x,y,z]
+        if z == 3 and 4 <= x <= 11 and 4 <= y <= 10:
+            shade='pumpkin_orange'
         faces={face:{'uv':[0,0,16,16],'texture':'#'+(
-                   'pumpkin_face' if face=='north' and (x,y) in eyes | smile else shade)}
+                   'pumpkin_face' if face=='north' and (x,y) in face_pixels else shade)}
                for face,(dx,dy,dz) in directions.items() if (x+dx,y+dy,z+dz) not in cells}
         if faces:
             elements.append({'from':[x,y,z],'to':[x+1,y+1,z+1],'faces':faces})
@@ -105,7 +116,7 @@ def files():
     result['assets/cosmeticpets/items/pumpkin.json']=json.dumps(
         {'model':{'type':'minecraft:model','model':'cosmeticpets:pet/pumpkin'}}).encode()
     result['assets/cosmeticpets/models/pet/pumpkin.json']=json.dumps(pumpkin_model()).encode()
-    colors={'pumpkin_orange':(238,123,24,255),'pumpkin_rib':(187,77,13,255),
+    colors={'pumpkin_orange':(238,123,24,255),'pumpkin_rib':(213,98,18,255),
             'pumpkin_green':(74,101,32,255),'pumpkin_stem':(86,65,33,255),
             'pumpkin_face':(49,27,19,255)}
     atlas=json.loads(result['assets/minecraft/atlases/items.json'])
