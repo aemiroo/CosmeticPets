@@ -3,3 +3,7 @@ pet-packets-enabled: false
 ghost:
   # Optional Java 26.3 pack. Players may decline without being kicked.
   resource-pack-url: "https://github.com/aemiroo/CosmeticPets/releases/download/ghost-pack/CosmeticPets-Ghost-Pack.zip"
+bedrock:
+  # Enable only after installing both Bedrock packs, mappings and GeyserDisplayEntity.
+  # Requires local Geyser-Spigot. In Geyser, force-resource-packs must be true.
+  enabled: false

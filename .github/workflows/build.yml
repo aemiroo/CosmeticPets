@@ -18,18 +18,9 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Inspect Geyser display resource contract
-        run: |
-          python3 - <<'PY'
-          import urllib.request, zipfile, io
-          data=urllib.request.urlopen('https://raw.githubusercontent.com/GeyserExtensionists/GeyserDisplayEntity/d78261c3e904b000fe50687cca0d7f9ef15803f3/packs/GeyserDisplayEntityPack.mcpack').read()
-          z=zipfile.ZipFile(io.BytesIO(data))
-          for name in z.namelist():
-            if name.endswith('.json') and any(s in name for s in ('entity/', 'animations/', 'models/')):
-              print('GEYSER-CONTRACT',name,z.read(name).decode())
-          PY
       - run: python3 -m unittest discover -s resource-pack -p 'test_*.py'
       - run: python3 resource-pack/build_pack.py
+      - run: python3 resource-pack/build_bedrock.py
       - run: mvn --batch-mode --no-transfer-progress verify
       - uses: actions/upload-artifact@v4
         with:
@@ -38,6 +29,9 @@ jobs:
             target/CosmeticPets-*.jar
             target/CosmeticPets-Ghost-Pack.zip
             target/ghost-pack.sha1
+            target/CosmeticPets-Bedrock.mcpack
+            target/cosmeticpets-geyser-mappings.json
+            target/cosmeticpets-display-mappings.yml
           if-no-files-found: error
       - name: Publish original ghost pack
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -47,4 +41,4 @@ jobs:
           if ! gh release view ghost-pack >/dev/null 2>&1; then
             gh release create ghost-pack --target "$GITHUB_SHA" --title "Original CosmeticPets Ghost Pack" --notes "Optional original Java 26.3 ghost model and textures. MIT licensed. Accept the pack to view ghost companions." --latest=false
           fi
-          gh release upload ghost-pack target/CosmeticPets-Ghost-Pack.zip target/ghost-pack.sha1 --clobber
+          gh release upload ghost-pack target/CosmeticPets-Ghost-Pack.zip target/ghost-pack.sha1 target/CosmeticPets-Bedrock.mcpack target/cosmeticpets-geyser-mappings.json target/cosmeticpets-display-mappings.yml --clobber

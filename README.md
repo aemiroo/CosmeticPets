@@ -55,3 +55,7 @@ Cats, bats and zombies remain fake packet entities with no metadata overrides. T
 ## Verification
 
 CI checks original pack model/texture references and bounds, builds the reproducible ZIP, and runs Java tests for movement, collision and persistence. Live client testing is required for pack prompt/accept/decline, ghost appearance, bobbing, visibility, reconnect, terrain and world transitions. No raw ghost entity metadata indices are used.
+
+## Bedrock / Geyser
+
+Version 1.2.1 also builds an experimental Bedrock pack for the ghost and pumpkin, plus both mapping files. See [BEDROCK.md](BEDROCK.md) for required GeyserDisplayEntity installation and setup. Build checks pass; live Bedrock rendering still needs testing.

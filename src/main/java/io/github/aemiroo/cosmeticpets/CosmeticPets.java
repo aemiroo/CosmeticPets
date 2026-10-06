@@ -30,6 +30,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     private Preferences preferences;
     private int interval;
     private final Set<UUID> ghostPackLoaded = new HashSet<>();
+    private final Set<UUID> bedrockPlayers = new HashSet<>();
     private static final UUID GHOST_PACK_ID = UUID.fromString("81e3f811-1da1-4454-b12b-c452ff67ef16");
     private byte[] ghostPackHash;
     private long animationTick;
@@ -212,6 +213,13 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         // Never send hardcoded fields (26.3 field 6 is Pose, not a boolean).
     }
     private void requestGhostPack(Player player) {
+        if (BedrockPlayers.contains(player.getUniqueId())) {
+            bedrockPlayers.add(player.getUniqueId());
+            // Geyser handles Bedrock pack acceptance before the Java login.
+            if (getConfig().getBoolean("bedrock.enabled", false) && BedrockPlayers.displayBridgeEnabled())
+                ghostPackLoaded.add(player.getUniqueId());
+            return;
+        }
         String url = getConfig().getString("ghost.resource-pack-url",
                 "https://github.com/aemiroo/CosmeticPets/releases/download/ghost-pack/CosmeticPets-Ghost-Pack.zip");
         if (ghostPackHash == null || url == null || url.isBlank()) return;
@@ -224,7 +232,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         }, 40L);
     }
     @EventHandler public void packStatus(PlayerResourcePackStatusEvent event) {
-        if (!GHOST_PACK_ID.equals(event.getID())) return;
+        if (bedrockPlayers.contains(event.getPlayer().getUniqueId()) || !GHOST_PACK_ID.equals(event.getID())) return;
         if (event.getStatus() == PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED)
             ghostPackLoaded.add(event.getPlayer().getUniqueId());
         else if (event.getStatus() != PlayerResourcePackStatusEvent.Status.ACCEPTED
@@ -317,7 +325,9 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         catch (IOException e) { player.sendMessage(ChatColor.RED + "Could not save your pet preference. Please try again."); return false; }
         remove(player.getUniqueId());
         if (kind.modelled() && summoned && !ghostPackLoaded.contains(player.getUniqueId()))
-            player.sendMessage(ChatColor.YELLOW + "Accept the optional pet resource pack to see this companion.");
+            player.sendMessage(ChatColor.YELLOW + (bedrockPlayers.contains(player.getUniqueId())
+                    ? "Bedrock pet support needs to be enabled by the server after installing the Bedrock packs."
+                    : "Accept the optional pet resource pack to see this companion."));
         player.sendMessage(ChatColor.GOLD + "[Pets] " + ChatColor.GRAY + (summoned ? kind.label + " summoned." : "Pet dismissed."));
         return true;
     }
@@ -356,6 +366,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     @EventHandler public void quit(PlayerQuitEvent event) {
         ghostPackLoaded.remove(event.getPlayer().getUniqueId());
+        bedrockPlayers.remove(event.getPlayer().getUniqueId());
         remove(event.getPlayer().getUniqueId());
         forgetViewer(event.getPlayer());
     }
