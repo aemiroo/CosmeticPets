@@ -67,6 +67,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         if (pet.kind == PetKind.GHOST) {
             if (pet.display != null) { pet.display.remove(); pet.display = null; }
             pet.viewers.clear();
+            pet.displayLast = null;
+            pet.scareTicks = 0;
             return;
         }
         for (UUID id : pet.viewers) {
@@ -249,13 +251,32 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 display.setItemStack(model);
                 display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
                 display.setBillboard(Display.Billboard.FIXED);
+                display.setBrightness(new Display.Brightness(15, 15));
                 display.setTeleportDuration(1);
                 display.setViewRange(0.75f);
                 display.setDisplayWidth(0.9f);
                 display.setDisplayHeight(0.95f);
             });
-        } else if (pet.last == null || pet.last.distanceSquared(pet.position) > 0
-                || pet.last.getYaw() != pet.position.getYaw()) pet.display.teleport(pet.position);
+        }
+        if (animationTick % 20 == 0 && pet.scareTicks == 0
+                && ghostPackLoaded.contains(owner.getUniqueId())
+                && owner.getLocation().distanceSquared(pet.position) <= 16
+                && RareScare.roll(java.util.concurrent.ThreadLocalRandom.current()::nextInt)) {
+            pet.scareTicks = RareScare.DURATION;
+            owner.sendMessage(ChatColor.LIGHT_PURPLE + "[Pets] Boo! " + ChatColor.WHITE + "♥");
+            owner.playSound(pet.position, Sound.ENTITY_ALLAY_AMBIENT_WITHOUT_ITEM, 0.35f, 1.8f);
+            owner.spawnParticle(Particle.HEART, pet.position.clone().add(0, 0.5, 0), 3, 0.2, 0.1, 0.2, 0);
+        }
+        Location displayed = pet.position.clone();
+        if (pet.scareTicks > 0) {
+            Location hop = displayed.clone().add(0, RareScare.hop(pet.scareTicks), 0);
+            if (clear(hop, PetKind.GHOST)) displayed = hop;
+            pet.scareTicks--;
+        }
+        if (pet.displayLast == null || pet.displayLast.distanceSquared(displayed) > 0
+                || pet.displayLast.getYaw() != displayed.getYaw()) pet.display.teleport(displayed);
+        pet.displayLast = displayed;
+
         Set<UUID> visible = new HashSet<>();
         for (Player viewer : Bukkit.getOnlinePlayers()) {
             if (!ghostPackLoaded.contains(viewer.getUniqueId()) || !viewer.getWorld().equals(owner.getWorld())
@@ -389,6 +410,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         final UUID uuid = UUID.randomUUID();
         final PetKind kind;
         ItemDisplay display;
+        Location displayLast;
+        int scareTicks;
         final Set<UUID> viewers = new HashSet<>();
         Location position, last, ownerLast;
         float followYaw;
