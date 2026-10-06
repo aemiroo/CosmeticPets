@@ -18,6 +18,16 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - name: Inspect Geyser display resource contract
+        run: |
+          python3 - <<'PY'
+          import urllib.request, zipfile, io
+          data=urllib.request.urlopen('https://raw.githubusercontent.com/GeyserExtensionists/GeyserDisplayEntity/d78261c3e904b000fe50687cca0d7f9ef15803f3/packs/GeyserDisplayEntityPack.mcpack').read()
+          z=zipfile.ZipFile(io.BytesIO(data))
+          for name in z.namelist():
+            if name.endswith('.json') and any(s in name for s in ('entity/', 'animations/', 'models/')):
+              print('GEYSER-CONTRACT',name,z.read(name).decode())
+          PY
       - run: python3 -m unittest discover -s resource-pack -p 'test_*.py'
       - run: python3 resource-pack/build_pack.py
       - run: mvn --batch-mode --no-transfer-progress verify
