@@ -8,26 +8,54 @@ def png(color):
     return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 16,16,8,6,0,0,0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND',b'')
 def cube(start, end, texture='white'):
     return {'from': start, 'to': end, 'faces': {face: {'uv':[0,0,16,16], 'texture':'#'+texture} for face in ('north','south','east','west','up','down')}}
+def shell():
+    # Unite the body, cap, arms and perimeter fringe before emitting faces.
+    # Interior faces would show distracting seams through a translucent body.
+    volumes = [([3,4,3],[13,13,13]), ([4,13,4],[12,14,12]),
+               ([1,7,6],[3,10,10]), ([13,7,6],[15,10,10])]
+    for i, bottom in enumerate((2,3,1,3,2)):
+        x=3+i*2
+        volumes.extend([([x,bottom,3],[x+2,4,4]), ([x,bottom,12],[x+2,4,13])])
+    for i, bottom in enumerate((3,1,3,2)):
+        z=4+i*2
+        volumes.extend([([3,bottom,z],[4,4,z+2]), ([12,bottom,z],[13,4,z+2])])
+    cells=set()
+    for start,end in volumes:
+        for x in range(start[0],end[0]):
+            for y in range(start[1],end[1]):
+                for z in range(start[2],end[2]):
+                    cells.add((x,y,z))
+    directions={'west':(-1,0,0),'east':(1,0,0),'down':(0,-1,0),
+                'up':(0,1,0),'north':(0,0,-1),'south':(0,0,1)}
+    elements=[]
+    for x,y,z in sorted(cells):
+        faces={}
+        for face,(dx,dy,dz) in directions.items():
+            if (x+dx,y+dy,z+dz) not in cells:
+                faces[face]={'uv':[0,0,16,16],
+                             'texture':'#underside' if face=='down' else '#white'}
+        if faces:
+            elements.append({'from':[x,y,z],'to':[x+1,y+1,z+1],'faces':faces})
+    return elements
 def files():
-    elements = [cube([3,4,3],[13,13,13]), cube([4,13,4],[12,14,12]),
-                cube([3,2,3],[5,4,13]), cube([7,1,3],[9,4,13]), cube([11,2,3],[13,4,13]),
-                cube([1,7,6],[3,10,10]), cube([13,7,6],[15,10,10]),
+    elements = shell() + [
                 cube([5,9,2.85],[6.5,11,3],'dark'), cube([9.5,9,2.85],[11,11,3],'dark'),
                 cube([7.25,6.5,2.85],[8.75,8,3],'dark'),
                 cube([4,7.5,2.8],[5.5,8,3],'pink'), cube([10.5,7.5,2.8],[12,8,3],'pink')]
-    model = {'credit':'Original CosmeticPets ghost; no Sketchfab assets used.', 'textures': {x:'cosmeticpets:pet/'+x for x in ('white','dark','pink')}, 'elements':elements,
+    model = {'credit':'Original CosmeticPets ghost; no Sketchfab assets used.', 'textures': {x:'cosmeticpets:pet/'+x for x in ('white','dark','pink','underside')}, 'elements':elements,
              'display': {'fixed': {'rotation':[0,0,0], 'translation':[0,0,0], 'scale':[1,1,1]}}, 'gui_light':'front'}
     result = {
         'pack.mcmeta': json.dumps({'pack':{'description':'CosmeticPets - original floating ghost', 'min_format':[97,1], 'max_format':[97,1]}}).encode(),
         'assets/minecraft/atlases/items.json': json.dumps({'sources': [
             {'type':'minecraft:single', 'resource':'cosmeticpets:pet/'+name,
-             'sprite':'cosmeticpets:pet/'+name} for name in ('white','dark','pink')
+             'sprite':'cosmeticpets:pet/'+name} for name in ('white','dark','pink','underside')
         ]}).encode(),
         'assets/cosmeticpets/items/ghost.json': json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/ghost'}}).encode(),
         'assets/cosmeticpets/models/pet/ghost.json':json.dumps(model).encode(),
-        'assets/cosmeticpets/textures/pet/white.png':png((236,244,250,255)),
-        'assets/cosmeticpets/textures/pet/dark.png':png((31,25,49,255)),
-        'assets/cosmeticpets/textures/pet/pink.png':png((214,154,190,255)),
+        'assets/cosmeticpets/textures/pet/white.png':png((236,244,250,110)),
+        'assets/cosmeticpets/textures/pet/dark.png':png((31,25,49,235)),
+        'assets/cosmeticpets/textures/pet/pink.png':png((214,154,190,190)),
+        'assets/cosmeticpets/textures/pet/underside.png':png((205,216,229,110)),
         'LICENSE.txt': b'Original ghost model and textures: MIT License, same as the CosmeticPets repository. No third-party models or textures included.\n'
     }
     return result

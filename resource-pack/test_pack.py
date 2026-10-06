@@ -1,4 +1,4 @@
-import importlib.util,json,pathlib,unittest
+import importlib.util,json,pathlib,unittest,struct,zlib
 spec=importlib.util.spec_from_file_location('builder',pathlib.Path(__file__).with_name('build_pack.py'))
 builder=importlib.util.module_from_spec(spec);spec.loader.exec_module(builder)
 class PackTest(unittest.TestCase):
@@ -24,6 +24,43 @@ class PackTest(unittest.TestCase):
             self.assertIn('assets/'+namespace+'/textures/'+path+'.png',files)
             sprites[source['sprite']]=source['resource']
         self.assertEqual(set(model['textures'].values()),set(sprites))
+    def test_body_png_has_partial_alpha(self):
+        data=builder.files()['assets/cosmeticpets/textures/pet/white.png']
+        offset=8
+        compressed=b''
+        while offset<len(data):
+            length=struct.unpack('>I',data[offset:offset+4])[0]
+            kind=data[offset+4:offset+8]
+            if kind==b'IDAT':
+                compressed+=data[offset+8:offset+8+length]
+            offset+=length+12
+        raw=zlib.decompress(compressed)
+        for row in range(16):
+            self.assertEqual(0,raw[row*65])
+            for column in range(16):
+                self.assertEqual(110,raw[row*65+1+column*4+3])
+    def test_fringe_follows_perimeter_instead_of_crossing_underside(self):
+        fringe=[element for element in builder.shell() if element['from'][1]<4]
+        self.assertTrue(fringe)
+        for element in fringe:
+            x,y,z=element['from']
+            self.assertTrue(x in (3,12) or z in (3,12))
+        self.assertTrue(any(element['from'][2]==3 for element in fringe))
+        self.assertTrue(any(element['from'][2]==12 for element in fringe))
+        self.assertTrue(any(element['from'][0]==3 for element in fringe))
+        self.assertTrue(any(element['from'][0]==12 for element in fringe))
+    def test_shell_does_not_emit_internal_shared_faces(self):
+        faces=set()
+        delta={'west':(-1,0,0),'east':(1,0,0),'down':(0,-1,0),'up':(0,1,0),
+               'north':(0,0,-1),'south':(0,0,1)}
+        opposite={'west':'east','east':'west','down':'up','up':'down','north':'south','south':'north'}
+        for element in builder.shell():
+            x,y,z=element['from']
+            for face in element['faces']:
+                faces.add((x,y,z,face))
+        for x,y,z,face in faces:
+            dx,dy,dz=delta[face]
+            self.assertNotIn((x+dx,y+dy,z+dz,opposite[face]),faces)
     def test_reproducible_original_assets(self):
         self.assertEqual(builder.files(),builder.files())
         self.assertTrue(builder.files()['assets/cosmeticpets/textures/pet/white.png'].startswith(b'\x89PNG'))
