@@ -152,26 +152,32 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         return List.of("cat", "bat", "zombie", "summon", "dismiss").stream()
                 .filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
     }
+    private void forgetViewer(Player player) {
+        for (Pet pet : pets.values()) {
+            if (pet.viewers.remove(player.getUniqueId()))
+                send(player, new WrapperPlayServerDestroyEntities(pet.id));
+        }
+    }
     @EventHandler public void quit(PlayerQuitEvent event) {
         remove(event.getPlayer().getUniqueId());
-        for (Pet pet : pets.values()) pet.viewers.remove(event.getPlayer().getUniqueId());
+        forgetViewer(event.getPlayer());
     }
     @EventHandler public void world(PlayerChangedWorldEvent event) {
         remove(event.getPlayer().getUniqueId());
         // Client world switches discard fake entities; resend other pets as new spawns.
-        for (Pet pet : pets.values()) pet.viewers.remove(event.getPlayer().getUniqueId());
+        forgetViewer(event.getPlayer());
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void teleport(PlayerTeleportEvent event) {
         getServer().getScheduler().runTask(this, () -> {
             if (event.isCancelled()) return;
             remove(event.getPlayer().getUniqueId());
-            for (Pet pet : pets.values()) pet.viewers.remove(event.getPlayer().getUniqueId());
+            forgetViewer(event.getPlayer());
         });
     }
     @EventHandler public void respawn(PlayerRespawnEvent event) {
         remove(event.getPlayer().getUniqueId());
-        for (Pet pet : pets.values()) pet.viewers.remove(event.getPlayer().getUniqueId());
+        forgetViewer(event.getPlayer());
     }
     @EventHandler(priority = EventPriority.HIGHEST) public void click(InventoryClickEvent event) {
         if (!(event.getView().getTopInventory().getHolder() instanceof Menu)) return;
