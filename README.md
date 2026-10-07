@@ -96,3 +96,7 @@ the external display extension, and live rendering should be verified.
 ## 1.6.0 — Capybara and Legacy collection
 
 Adds a free cosmetic-only Capybara (`/pets capybara`) with a four-leg walking cycle. Halloween Cat, Bat, Zombie, Ghost and Pumpkin return under Legacy • Halloween in `/pets`, with direct commands available. Legacy is a collection label; these companions remain free. Baby Yeti keeps its existing saved boss unlock and preview permission. Locked Baby Yeti slots show a black question mark with unlock instructions; the new pack supplies the question-mark icon. Update both Java and Bedrock packs and Geyser mappings for the new models.
+
+### 1.6.1 — reference-style Capybara
+
+Rebuilds Capybara with a boxy body, long blunt snout, small tilted ears, dark feet and pixel-patterned brown textures. A rare relaxed blink runs for 1.2 seconds after at least 3 seconds standing still, with a random 2–5 minute cooldown. Moving cancels the blink immediately and resumes its four-leg gait. Both packs include all six idle poses.

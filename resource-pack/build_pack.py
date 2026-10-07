@@ -263,6 +263,9 @@ def legacy_files():
     result['assets/minecraft/atlases/items.json']=json.dumps(atlas).encode()
     return result
 def walk_model(pet, frame):
+    if pet=="capybara":
+        from capybara_model import model
+        return model(walk=frame)
     # Closed surfaces at each joint prevent holes when limbs rotate away.
     model=winter_model(pet, articulated=True)
     swing=math.sin(2*math.pi*frame/12)
@@ -303,10 +306,10 @@ def yeti_walk_model(frame):
 def files():
     source=legacy_files()
     keep={'snowman','reindeer','yeti','ghost','pumpkin','capybara'}
-    source['assets/cosmeticpets/models/pet/capybara.json']=json.dumps(winter_model('capybara')).encode()
+    from capybara_model import model as capy_model, texture as capy_texture, PALETTE
+    source['assets/cosmeticpets/models/pet/capybara.json']=json.dumps(capy_model()).encode()
     source['assets/cosmeticpets/items/capybara.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/capybara'}}).encode()
-    for name,color in {'capy_fur':(147,106,67,255),'capy_muzzle':(116,80,51,255),'capy_nose':(64,43,32,255)}.items():
-        source['assets/cosmeticpets/textures/pet/'+name+'.png']=png(color)
+    for name in PALETTE:source['assets/cosmeticpets/textures/pet/'+name+'.png']=capy_texture(name)
     models={p:json.loads(source['assets/cosmeticpets/models/pet/'+p+'.json']) for p in keep}
     textures={t for m in models.values() for t in m['textures'].values()}
     result={'pack.mcmeta':json.dumps({'pack':{'description':'CosmeticPets - Companions and Halloween Legacy','min_format':[97,1],'max_format':[97,1]}}).encode(),
@@ -314,7 +317,7 @@ def files():
     for pet in sorted(keep):
         for path in ('assets/cosmeticpets/items/'+pet+'.json','assets/cosmeticpets/models/pet/'+pet+'.json'):
             result[path]=source[path]
-    for species,builder in (('reindeer',reindeer_walk_model),('yeti',yeti_walk_model),('capybara',lambda f:walk_model('capybara',f))):
+    for species,builder in (('reindeer',reindeer_walk_model),('yeti',yeti_walk_model),('capybara',lambda f:capy_model(walk=f))):
         for frame in range(12):
             pet=species+'_walk_'+str(frame)
             result['assets/cosmeticpets/items/'+pet+'.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/'+pet}}).encode()
@@ -324,6 +327,10 @@ def files():
         result[path]=source[path]
     result['assets/minecraft/atlases/items.json']=json.dumps({'sources':[
         {'type':'minecraft:single','resource':t,'sprite':t} for t in sorted(textures)]}).encode()
+    for frame in range(6):
+        name='capybara_idle_'+str(frame)
+        result['assets/cosmeticpets/items/'+name+'.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/'+name}}).encode()
+        result['assets/cosmeticpets/models/pet/'+name+'.json']=json.dumps(capy_model(idle=frame)).encode()
     # A literal black question mark for locked menu entries, without custom fonts.
     question=[]
     for a,b in [([5,12,7],[11,14,9]),([9,9,7],[11,12,9]),([7,7,7],[11,9,9]),([7,5,7],[9,7,9]),([7,1,7],[9,3,9])]:

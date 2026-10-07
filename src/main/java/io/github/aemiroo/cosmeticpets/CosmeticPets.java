@@ -312,11 +312,26 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 pet.walkDistance = (pet.walkDistance + Math.min(moved,0.06)) % 0.9;
                 frame = WinterMotion.walkFrame(pet.walkDistance);
             } else pet.walkDistance = 0;
+            if (pet.kind == PetKind.CAPYBARA) {
+                if (pet.nextCapyIdle == 0) pet.nextCapyIdle=animationTick+java.util.concurrent.ThreadLocalRandom.current().nextInt(2400,6001);
+                if (frame >= 0) {
+                    pet.capyIdleStarted=-1;pet.capyStillSince=animationTick;
+                    if (animationTick>=pet.nextCapyIdle) pet.nextCapyIdle=animationTick+java.util.concurrent.ThreadLocalRandom.current().nextInt(2400,6001);
+                } else if (pet.capyIdleStarted < 0 && animationTick>=pet.nextCapyIdle && animationTick-pet.capyStillSince>=60) {
+                    pet.capyIdleStarted=animationTick;
+                    pet.nextCapyIdle=animationTick+java.util.concurrent.ThreadLocalRandom.current().nextInt(2400,6001);
+                }
+                if (pet.capyIdleStarted >= 0) {
+                    long age=animationTick-pet.capyIdleStarted;
+                    if (age<24) frame=12+(int)(age/4);
+                    else pet.capyIdleStarted=-1;
+                }
+            }
             if (pet.walkFrame != frame) {
                 ItemStack item = pet.display.getItemStack();
                 ItemMeta meta = item.getItemMeta();
                 String species = pet.kind.name().toLowerCase(Locale.ROOT);
-                meta.setItemModel(new NamespacedKey("cosmeticpets", frame < 0 ? species : species+"_walk_"+frame));
+                meta.setItemModel(new NamespacedKey("cosmeticpets", frame < 0 ? species : frame >= 12 ? species+"_idle_"+(frame-12) : species+"_walk_"+frame));
                 item.setItemMeta(meta);
                 pet.display.setItemStack(item);
                 pet.walkFrame = frame;
@@ -519,6 +534,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         boolean snowAirborne;
         double walkDistance;
         int walkFrame = -1;
+        long nextCapyIdle,capyStillSince,capyIdleStarted=-1;
         int scareTicks;
         float lastScaleY = 1;
         final Set<UUID> viewers = new HashSet<>();
