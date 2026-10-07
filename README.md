@@ -100,3 +100,9 @@ Adds a free cosmetic-only Capybara (`/pets capybara`) with a four-leg walking cy
 ### 1.6.1 — reference-style Capybara
 
 Rebuilds Capybara with a boxy body, long blunt snout, small tilted ears, dark feet and pixel-patterned brown textures. A rare relaxed blink runs for 1.2 seconds after at least 3 seconds standing still, with a random 2–5 minute cooldown. Moving cancels the blink immediately and resumes its four-leg gait. Both packs include all six idle poses.
+
+### 1.6.2 — closer Capybara proportions
+
+Raises the back to just below head height, wraps dark muzzle color around the snout tip, moves both eyes toward the ears and darkens the legs. Retains the rare idle blink and four-leg gait.
+
+The Capybara gait now uses 24 small sinusoidal shoulder/hip rotations, paired diagonally like a quadruped. Animation advances with distance travelled and pauses when stationary, replacing the previous three-angle snapping. Modern model rotation support: https://www.minecraft.net/en-us/article/minecraft-snapshot-25w46a

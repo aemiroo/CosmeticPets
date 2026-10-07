@@ -309,8 +309,13 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                     displayed.getX()-pet.displayLast.getX(), displayed.getZ()-pet.displayLast.getZ());
             int frame = -1;
             if (moved > 0.002 && moved < 1) {
-                pet.walkDistance = (pet.walkDistance + Math.min(moved,0.06)) % 0.9;
-                frame = WinterMotion.walkFrame(pet.walkDistance);
+                if (pet.kind == PetKind.CAPYBARA) {
+                    pet.walkDistance=(pet.walkDistance+Math.min(moved,.05))%1.2;
+                    frame=Math.min(23,(int)(pet.walkDistance/1.2*24));
+                } else {
+                    pet.walkDistance = (pet.walkDistance + Math.min(moved,0.06)) % 0.9;
+                    frame = WinterMotion.walkFrame(pet.walkDistance);
+                }
             } else pet.walkDistance = 0;
             if (pet.kind == PetKind.CAPYBARA) {
                 if (pet.nextCapyIdle == 0) pet.nextCapyIdle=animationTick+java.util.concurrent.ThreadLocalRandom.current().nextInt(2400,6001);
@@ -323,7 +328,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 }
                 if (pet.capyIdleStarted >= 0) {
                     long age=animationTick-pet.capyIdleStarted;
-                    if (age<24) frame=12+(int)(age/4);
+                    if (age<24) frame=24+(int)(age/4);
                     else pet.capyIdleStarted=-1;
                 }
             }
@@ -331,7 +336,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 ItemStack item = pet.display.getItemStack();
                 ItemMeta meta = item.getItemMeta();
                 String species = pet.kind.name().toLowerCase(Locale.ROOT);
-                meta.setItemModel(new NamespacedKey("cosmeticpets", frame < 0 ? species : frame >= 12 ? species+"_idle_"+(frame-12) : species+"_walk_"+frame));
+                meta.setItemModel(new NamespacedKey("cosmeticpets", frame < 0 ? species : frame >= 24 ? species+"_idle_"+(frame-24) : species+"_walk_"+frame));
                 item.setItemMeta(meta);
                 pet.display.setItemStack(item);
                 pet.walkFrame = frame;

@@ -318,7 +318,7 @@ def files():
         for path in ('assets/cosmeticpets/items/'+pet+'.json','assets/cosmeticpets/models/pet/'+pet+'.json'):
             result[path]=source[path]
     for species,builder in (('reindeer',reindeer_walk_model),('yeti',yeti_walk_model),('capybara',lambda f:capy_model(walk=f))):
-        for frame in range(12):
+        for frame in range(24 if species=="capybara" else 12):
             pet=species+'_walk_'+str(frame)
             result['assets/cosmeticpets/items/'+pet+'.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/'+pet}}).encode()
             result['assets/cosmeticpets/models/pet/'+pet+'.json']=json.dumps(builder(frame)).encode()

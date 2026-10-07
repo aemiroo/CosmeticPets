@@ -1,5 +1,5 @@
 name: CosmeticPets
-version: 1.6.1
+version: 1.6.2
 main: io.github.aemiroo.cosmeticpets.CosmeticPets
 api-version: '1.21'
 depend: [packetevents]
