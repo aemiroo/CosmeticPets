@@ -38,6 +38,13 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
 
     @Override public void onEnable() {
         saveDefaultConfig();
+        // Upgrade the old bundled size once; preserve other configured sizes.
+        if (getConfig().getInt("capybara.scale-version", 1) < 2) {
+            if (Math.abs(getConfig().getDouble("capybara.scale", 1.35) - 1.35) < .000001)
+                getConfig().set("capybara.scale", .9);
+            getConfig().set("capybara.scale-version", 2);
+            saveConfig();
+        }
         if (!getConfig().getBoolean("pet-packets-enabled", false)) {
             getLogger().warning("CosmeticPets is in emergency safe mode; no pet packets will be sent.");
             getServer().getPluginManager().disablePlugin(this);
@@ -111,8 +118,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     private Collision.Point point(Location at) { return new Collision.Point(at.getX(), at.getY(), at.getZ()); }
     private float capybaraScale() {
-        double configured=getConfig().getDouble("capybara.scale",1.35);
-        return Double.isFinite(configured)?(float)Math.max(.5,Math.min(2,configured)):1.35f;
+        double configured=getConfig().getDouble("capybara.scale",.9);
+        return Double.isFinite(configured)?(float)Math.max(.5,Math.min(2,configured)):.9f;
     }
     private boolean clear(Location at, PetKind kind) {
         double halfWidth = kind.modelled() ? 0.5 : 0.35;
@@ -482,11 +489,11 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             case 10 -> choose(player, PetKind.SNOWMAN, true);
             case 14 -> choose(player, PetKind.REINDEER, true);
             case 16 -> choose(player, PetKind.CAPYBARA, true);
-            case 28 -> choose(player, PetKind.CAT, true);
-            case 29 -> choose(player, PetKind.BAT, true);
-            case 30 -> choose(player, PetKind.ZOMBIE, true);
-            case 31 -> choose(player, PetKind.GHOST, true);
-            case 32 -> choose(player, PetKind.PUMPKIN, true);
+            case 29 -> choose(player, PetKind.CAT, true);
+            case 30 -> choose(player, PetKind.BAT, true);
+            case 31 -> choose(player, PetKind.ZOMBIE, true);
+            case 32 -> choose(player, PetKind.GHOST, true);
+            case 33 -> choose(player, PetKind.PUMPKIN, true);
             case 39, 41 -> {
                 var choice = preferences.get(player.getUniqueId());
                 if (choice != null) choose(player, choice.kind(), event.getRawSlot() == 39);
@@ -536,11 +543,11 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             inventory.setItem(14,modelIcon("reindeer","Reindeer","Click to summon."));
             inventory.setItem(16,modelIcon("capybara","Capybara","Click to summon."));
             inventory.setItem(22,icon(Material.NAME_TAG,"Legacy • Halloween","Companions from the Halloween collection."));
-            inventory.setItem(28,icon(Material.CAT_SPAWN_EGG,"Cat • Legacy","Click to summon."));
-            inventory.setItem(29,icon(Material.BAT_SPAWN_EGG,"Bat • Legacy","Click to summon."));
-            inventory.setItem(30,icon(Material.ZOMBIE_HEAD,"Zombie • Legacy","Click to summon."));
-            inventory.setItem(31,modelIcon("ghost","Ghost • Legacy","Click to summon."));
-            inventory.setItem(32,modelIcon("pumpkin","Pumpkin • Legacy","Click to summon."));
+            inventory.setItem(29,icon(Material.CAT_SPAWN_EGG,"Cat • Legacy","Click to summon."));
+            inventory.setItem(30,icon(Material.BAT_SPAWN_EGG,"Bat • Legacy","Click to summon."));
+            inventory.setItem(31,icon(Material.ZOMBIE_HEAD,"Zombie • Legacy","Click to summon."));
+            inventory.setItem(32,modelIcon("ghost","Ghost • Legacy","Click to summon."));
+            inventory.setItem(33,modelIcon("pumpkin","Pumpkin • Legacy","Click to summon."));
             inventory.setItem(39,icon(Material.LIME_DYE,"Summon","Summon your saved pet."));
             inventory.setItem(41,icon(Material.RED_DYE,"Dismiss","Dismiss your pet; keep your selection."));
         }

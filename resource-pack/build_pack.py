@@ -344,7 +344,7 @@ def files():
     for path,data in list(result.items()):
         if path.startswith('assets/cosmeticpets/models/pet/') and path.endswith('.json') and not path.endswith('/locked.json'):
             model=json.loads(data)
-            model.setdefault('display',{})['gui']={'rotation':[20,-35,0],'translation':[0,-1,0],'scale':[.8,.8,.8]}
+            model.setdefault('display',{})['gui']={'rotation':[20,145,0],'translation':[0,-1,0],'scale':[.8,.8,.8]}
             result[path]=json.dumps(model).encode()
     return result
 

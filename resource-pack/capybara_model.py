@@ -1,7 +1,7 @@
 """Original block capybara inspired by the owner's reference images."""
 import math, struct, zlib
 PALETTE={'capy_body':(161,116,65),'capy_head':(166,121,73),'capy_side':(166,121,73),
- 'capy_half':(166,121,73),'capy_closed':(166,121,73),'capy_muzzle':(76,64,49),
+ 'capy_half':(166,121,73),'capy_closed':(166,121,73),'capy_muzzle':(76,64,49),'capy_nose':(76,64,49),
  'capy_white':(218,224,215),'capy_eye':(25,22,17),'capy_ear':(80,67,51),'capy_foot':(73,62,48)}
 def color(name,x,y):
  if name in ('capy_eye','capy_white'):return PALETTE[name]
@@ -10,7 +10,7 @@ def color(name,x,y):
   shades=((127,85,48),(145,98,53),(160,113,64),(176,130,76),(157,108,60))
   return shades[patch]
  base=PALETTE[name]
- if name=='capy_muzzle' and y in (7,8) and x in (4,5,10,11):return (29,25,20)
+ if name=='capy_nose' and y in (7,8) and x in (4,5,10,11):return (29,25,20)
  noise=(patch-2)*5
  return tuple(max(0,min(255,v+noise)) for v in base)
 def texture(name):
@@ -27,6 +27,7 @@ def model(walk=None,idle=None):
  del head['faces']['north']
  snout=box([4,7,0],[12,14,2],'capy_muzzle')
  del snout['faces']['south']
+ snout['faces']['north']['texture']='#capy_nose'
  eye_height=.7 if idle in (None,0,5) else .4 if idle in (1,4) else .15
  for x in (3.98,12):
   box([x,11,4],[x+.02,11+eye_height,5.5],'capy_eye')

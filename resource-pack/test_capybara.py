@@ -36,11 +36,20 @@ class CapybaraPackTest(unittest.TestCase):
         self.assertNotIn('#capy_white',{f['texture'] for e in neutral['elements'] for f in e['faces'].values()})
         self.assertEqual(11,len(neutral['elements']))
         self.assertNotIn('rotation',neutral['elements'][1])
+    def test_nostrils_only_appear_on_front(self):
+        from capybara_model import model, color
+        snout=model()['elements'][2]
+        self.assertEqual('#capy_nose',snout['faces']['north']['texture'])
+        for side in ('east','west','up','down'):
+            self.assertEqual('#capy_muzzle',snout['faces'][side]['texture'])
+        self.assertEqual((29,25,20),color('capy_nose',4,7))
+        self.assertNotEqual((29,25,20),color('capy_muzzle',4,7))
     def test_custom_menu_models_have_gui_transforms(self):
         java=files()
         for name in ('capybara','snowman','reindeer','yeti','ghost','pumpkin','locked'):
             model=json.loads(java['assets/cosmeticpets/models/pet/'+name+'.json'])
             self.assertIn('gui',model['display'])
+            if name!='locked':self.assertEqual([20,145,0],model['display']['gui']['rotation'])
     def test_all_capybara_poses_and_locked_icon_resolve_in_both_packs(self):
         java,bedrock=files(),bedrock_files()
         for name in ['capybara','locked']+['capybara_walk_'+str(i) for i in range(24)]+['capybara_idle_'+str(i) for i in range(6)]:

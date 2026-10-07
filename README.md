@@ -120,3 +120,8 @@ Adds white eye highlights, a slightly lowered snout, longer brown/dark legs, a s
 Uses the selected short-legged reference: a straight broad head, plain black side eyes, small tilted ears, dark snout and feet, long boxy body, and warm mottled fur. Removes the white eye highlights, head tilt and tail from 1.6.4. Keeps the configurable 1.35 display scale, smooth diagonal-leg walking and rare relaxed blink.
 
 The 1.6.5 menu now groups current companions and Halloween Legacy into two labeled rows with custom model thumbnails, neutral filler panes and bottom-row Summon/Dismiss controls. Locked Baby Yeti keeps the black question mark.
+
+
+### 1.6.6 — capybara size and menu corrections
+
+Nostrils appear only on the snout front, with plain dark side and top textures. Capybara default scale is now 0.9 (one third smaller than 1.35). On first startup, the old 1.35 default migrates to 0.9; other custom scales stay unchanged. Custom menu thumbnails turn toward the viewer and the five Legacy pets occupy centered slots beneath their name-tag heading. Update the plugin and resource packs, then restart and reconnect.
