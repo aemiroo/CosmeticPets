@@ -83,3 +83,13 @@ and [Microsoft geometry documentation](https://learn.microsoft.com/en-us/minecra
 The carved pumpkin's interior uses a separate emissive bone and TGA light mask,
 so the glow does not depend on the display bridge translating a brightness override.
 This is a visual glow only; it does not illuminate nearby terrain.
+
+### Christmas companions (1.3.0)
+
+Use `/pets snowman` or `/pets reindeer`, or select them in `/pets`. The snowman
+wears a red scarf and top hat; the reindeer has antlers and a red nose. Both are
+cosmetic only and use the shared collision-aware follow motion. Existing pets
+and saved selections remain available. Replace the Java/Bedrock packs and both
+Geyser mapping files with the new build; restart and reconnect. Bedrock still
+requires the separately installed GeyserDisplayEntity extension and its pack.
+Bedrock rendering remains experimental until verified with a real client.

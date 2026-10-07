@@ -66,3 +66,13 @@ The pumpkin has actual three-voxel-deep eye, nose and mouth recesses. Warm emiss
 back walls sit inside the cuts; the rind remains normally lit and rounded.
 Java uses model-element light emission, and Bedrock separates emissive geometry
 into its own material. The light is cosmetic and does not alter world lighting.
+
+### Christmas companions (1.3.0)
+
+Use `/pets snowman` or `/pets reindeer`, or select them in `/pets`. The snowman
+wears a red scarf and top hat; the reindeer has antlers and a red nose. Both are
+cosmetic only and use the shared collision-aware follow motion. Existing pets
+and saved selections remain available. Replace the Java/Bedrock packs and both
+Geyser mapping files with the new build; restart and reconnect. Bedrock still
+requires the separately installed GeyserDisplayEntity extension and its pack.
+Bedrock rendering remains experimental until verified with a real client.

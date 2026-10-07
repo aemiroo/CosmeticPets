@@ -36,6 +36,17 @@ class PreferencesTest {
         store.set(owner, new Preferences.Choice(PetKind.PUMPKIN, false));
         assertEquals(new Preferences.Choice(PetKind.PUMPKIN, false), new Preferences(file).get(owner));
     }
+    @Test void christmasSelectionsSurviveRestartAndDismissal() throws Exception {
+        Path file=directory.resolve("players.yml");
+        var store=new Preferences(file);
+        for (PetKind kind : new PetKind[]{PetKind.SNOWMAN,PetKind.REINDEER}) {
+            UUID owner=UUID.randomUUID();
+            store.set(owner,new Preferences.Choice(kind,true));
+            assertEquals(new Preferences.Choice(kind,true),new Preferences(file).get(owner));
+            store.set(owner,new Preferences.Choice(kind,false));
+            assertEquals(new Preferences.Choice(kind,false),new Preferences(file).get(owner));
+        }
+    }
     @Test void invalidPreferenceFailsInsteadOfOverwritingSavedFile() throws Exception {
         Path file = directory.resolve("players.yml");
         String content = UUID.randomUUID() + ":\n  pet: dragon\n  summoned: true\n";
