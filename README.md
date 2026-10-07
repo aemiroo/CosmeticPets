@@ -83,3 +83,12 @@ Cat, bat, zombie, ghost, and pumpkin have been retired. Saved retired selections
 load as snowman, preserving the summoned/dismissed state. Both resource packs
 now contain only Christmas models; update packs and both Geyser mapping files.
 The Java pack filename and release tag remain unchanged for existing config URLs.
+
+### Walking and snowman proportions (1.3.2)
+
+Reindeer now walk with twelve baked leg poses, advancing with actual horizontal
+travel and returning to a standing pose when stopped. They no longer bounce
+while idle. The snowman's top hat is smaller and its twig arms hang down.
+Update both packs and both Geyser mapping files: walking uses additional item
+model definitions. These poses work without client mods; Bedrock still needs
+the external display extension, and live rendering should be verified.

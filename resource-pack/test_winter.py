@@ -1,12 +1,25 @@
 import json, unittest
-from build_pack import files, winter_model
+from build_pack import files, winter_model, reindeer_walk_model
 from build_bedrock import files as bedrock_files, mappings
 class WinterPackTest(unittest.TestCase):
     def test_only_christmas_models_are_published(self):
         java,bedrock=files(),bedrock_files()
-        self.assertEqual({'snowman','reindeer'},{p.split('/')[-1][:-5] for p in java if p.startswith('assets/cosmeticpets/items/')})
-        self.assertEqual({'snowman','reindeer'},{p.split('/')[-1][:-5] for p in bedrock if p.startswith('attachables/')})
-        self.assertEqual(2,len(mappings()['items']['minecraft:paper']))
+        self.assertEqual({'snowman','reindeer'}|{'reindeer_walk_'+str(i) for i in range(12)},{p.split('/')[-1][:-5] for p in java if p.startswith('assets/cosmeticpets/items/')})
+        self.assertEqual({'snowman','reindeer'}|{'reindeer_walk_'+str(i) for i in range(12)},{p.split('/')[-1][:-5] for p in bedrock if p.startswith('attachables/')})
+        self.assertEqual(14,len(mappings()['items']['minecraft:paper']))
+    def test_gait_moves_only_legs_and_keeps_them_in_collision_bounds(self):
+        idle=winter_model('reindeer')
+        for frame in range(12):
+            pose=reindeer_walk_model(frame)
+            self.assertEqual(len(idle['elements']),len(pose['elements']))
+            for original,animated in zip(idle['elements'],pose['elements']):
+                x,y,z=original['from']
+                if not (y<5 and x in (5,10) and z in (7,11)):
+                    self.assertEqual(original,animated)
+                for bound in ('from','to'):
+                    self.assertTrue(all(0<=v<=16 for v in animated[bound]))
+        self.assertEqual(idle['elements'],reindeer_walk_model(0)['elements'])
+        self.assertNotEqual(reindeer_walk_model(3)['elements'],reindeer_walk_model(9)['elements'])
     def test_surface_union_has_no_internal_or_duplicate_faces(self):
         for pet in ('snowman','reindeer'):
             model=winter_model(pet)

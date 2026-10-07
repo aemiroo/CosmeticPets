@@ -74,6 +74,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             pet.displayLast = null;
             pet.scareTicks = 0;
             pet.lastScaleY = 1;
+            pet.walkFrame = -1;
+            pet.walkDistance = 0;
             return;
         }
         for (UUID id : pet.viewers) {
@@ -250,6 +252,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         if (pet.display == null || !pet.display.isValid()) {
             pet.viewers.clear();
             pet.lastScaleY = 1;
+            pet.walkFrame = -1;
+            pet.walkDistance = 0;
             if (pet.display != null) pet.display.remove();
             ItemStack model = new ItemStack(Material.PAPER);
             ItemMeta meta = model.getItemMeta();
@@ -287,10 +291,27 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             if (clear(hop, PetKind.GHOST)) displayed = hop;
             pet.scareTicks--;
         }
-        if (pet.kind == PetKind.SNOWMAN || pet.kind == PetKind.REINDEER) {
+        if (pet.kind == PetKind.SNOWMAN) {
             long tick = animationTick + Math.floorMod(owner.getUniqueId().getLeastSignificantBits(), 80);
             Location animated = displayed.clone().add(0, WinterMotion.hop(pet.kind, tick), 0);
             if (clear(animated, pet.kind)) displayed = animated;
+        }
+        if (pet.kind == PetKind.REINDEER) {
+            double moved = pet.displayLast == null ? 0 : Math.hypot(
+                    displayed.getX()-pet.displayLast.getX(), displayed.getZ()-pet.displayLast.getZ());
+            int frame = -1;
+            if (moved > 0.002 && moved < 1) {
+                pet.walkDistance = (pet.walkDistance + Math.min(moved,0.2)) % 0.9;
+                frame = WinterMotion.walkFrame(pet.walkDistance);
+            } else pet.walkDistance = 0;
+            if (pet.walkFrame != frame) {
+                ItemStack item = pet.display.getItemStack();
+                ItemMeta meta = item.getItemMeta();
+                meta.setItemModel(new NamespacedKey("cosmeticpets", frame < 0 ? "reindeer" : "reindeer_walk_"+frame));
+                item.setItemMeta(meta);
+                pet.display.setItemStack(item);
+                pet.walkFrame = frame;
+            }
         }
         if (pet.kind == PetKind.PUMPKIN) {
             long tick = animationTick + Math.floorMod(owner.getUniqueId().getLeastSignificantBits(), PumpkinMotion.CYCLE);
@@ -443,6 +464,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         final PetKind kind;
         ItemDisplay display;
         Location displayLast;
+        double walkDistance;
+        int walkFrame = -1;
         int scareTicks;
         float lastScaleY = 1;
         final Set<UUID> viewers = new HashSet<>();

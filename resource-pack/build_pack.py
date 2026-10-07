@@ -54,15 +54,15 @@ def winter_model(pet):
         ball((8,4,8),(4,4,4),'snow')
         ball((8,8,8),(3,3,3),'snow')
         ball((8,11,8),(2.5,2.5,2.5),'snow')
-        box((5,13,5),(11,14,11),'coal')
-        box((6,14,6),(10,16,10),'coal')
+        box((6,13,6),(10,14,10),'coal')
+        box((7,14,7),(9,16,9),'coal')
         box((5,8,5),(11,9,11),'scarf')
         box((5,6,4),(7,9,5),'scarf')
         box((6,11,5),(7,12,6),'coal'); box((9,11,5),(10,12,6),'coal')
         box((7,10,3),(9,11,6),'carrot')
         box((7,4,4),(8,5,5),'coal'); box((7,6,5),(8,7,6),'coal')
-        box((1,7,7),(5,8,8),'wood'); box((11,7,7),(15,8,8),'wood')
-        box((1,8,7),(2,10,8),'wood'); box((14,8,7),(15,10,8),'wood')
+        box((3,6,7),(5,7,8),'wood'); box((11,6,7),(13,7,8),'wood')
+        box((3,4,7),(4,6,8),'wood'); box((12,4,7),(13,6,8),'wood')
     else:
         ball((8,6,9),(4,3,4),'fur')
         box((6,6,4),(10,10,7),'fur')
@@ -203,6 +203,22 @@ def legacy_files():
                                  'sprite':'cosmeticpets:pet/'+name})
     result['assets/minecraft/atlases/items.json']=json.dumps(atlas).encode()
     return result
+def reindeer_walk_model(frame):
+    model=winter_model('reindeer')
+    phase=2*math.pi*frame/12
+    # Move each diagonal pair in opposite directions. The head and body stay still.
+    for e in model['elements']:
+        x,y,z=e['from']
+        if y<5 and x in (5,10) and z in (7,11):
+            sign=1 if (x,z) in ((5,7),(10,11)) else -1
+            swing=math.sin(phase)*sign
+            dz=round(0.9*swing,6)
+            dy=round(max(0,swing)*0.4,6)
+            for bound in ('from','to'):
+                e[bound][1]+=dy
+                e[bound][2]+=dz
+    return model
+
 def files():
     source=legacy_files()
     keep={'snowman','reindeer'}
@@ -213,6 +229,10 @@ def files():
     for pet in sorted(keep):
         for path in ('assets/cosmeticpets/items/'+pet+'.json','assets/cosmeticpets/models/pet/'+pet+'.json'):
             result[path]=source[path]
+    for frame in range(12):
+        pet='reindeer_walk_'+str(frame)
+        result['assets/cosmeticpets/items/'+pet+'.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/'+pet}}).encode()
+        result['assets/cosmeticpets/models/pet/'+pet+'.json']=json.dumps(reindeer_walk_model(frame)).encode()
     for texture in sorted(textures):
         path='assets/'+texture.replace(':','/textures/')+'.png'
         result[path]=source[path]
