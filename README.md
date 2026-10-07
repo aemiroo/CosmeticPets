@@ -58,4 +58,11 @@ CI checks original pack model/texture references and bounds, builds the reproduc
 
 ## Bedrock / Geyser
 
-Version 1.2.4 also builds an experimental Bedrock pack for the ghost and pumpkin, plus both mapping files. See [BEDROCK.md](BEDROCK.md) for required GeyserDisplayEntity installation and setup. Build checks pass; live Bedrock rendering still needs testing.
+Version 1.2.5 also builds an experimental Bedrock pack for the ghost and pumpkin, plus both mapping files. See [BEDROCK.md](BEDROCK.md) for required GeyserDisplayEntity installation and setup. Build checks pass; live Bedrock rendering still needs testing.
+
+### Carved pumpkin light
+
+The pumpkin has actual three-voxel-deep eye, nose and mouth recesses. Warm emissive
+back walls sit inside the cuts; the rind remains normally lit and rounded.
+Java uses model-element light emission, and Bedrock separates emissive geometry
+into its own material. The light is cosmetic and does not alter world lighting.

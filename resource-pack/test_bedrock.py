@@ -10,9 +10,10 @@ class BedrockPackTest(unittest.TestCase):
             geometry=json.loads(pack['models/entity/'+pet+'.geo.json'])['minecraft:geometry'][0]
             bone=geometry['bones'][0]
             self.assertEqual("'geyser_z'",bone['binding'])
-            self.assertEqual(len(original['elements']),len(bone['cubes']))
-            self.assertEqual(sum(len(e['faces']) for e in original['elements']),sum(len(c['uv']) for c in bone['cubes']))
-            for cube in bone['cubes']:
+            cubes=[cube for b in geometry['bones'] for cube in b['cubes']]
+            self.assertEqual(len(original['elements']),len(cubes))
+            self.assertEqual(sum(len(e['faces']) for e in original['elements']),sum(len(c['uv']) for c in cubes))
+            for cube in cubes:
                 for face in cube['uv'].values():
                     self.assertLessEqual(face['uv'][0]+16,geometry['description']['texture_width'])
             if pet=='pumpkin':
@@ -29,9 +30,26 @@ class BedrockPackTest(unittest.TestCase):
             self.assertEqual(definition['bedrock_identifier'],attach['identifier'])
             self.assertEqual('cosmeticpets:'+pet,definition['model'])
             self.assertIn('item-identifier: "'+definition['bedrock_identifier']+'"',display_mappings())
-            self.assertIn(attach['textures']['default']+'.png',pack)
+            self.assertTrue(any(attach['textures']['default']+ext in pack for ext in ('.png','.tga')))
             self.assertIn(attach['render_controllers'][0],controller)
             self.assertIn('cosmeticpets.'+pet,icons)
+
+    def test_pumpkin_light_is_separate_emissive_geometry(self):
+        pack=files()
+        geometry=json.loads(pack['models/entity/pumpkin.geo.json'])['minecraft:geometry'][0]
+        light=next(b for b in geometry['bones'] if b['name']=='pet_light')
+        self.assertEqual('pet',light['parent'])
+        self.assertTrue(light['cubes'])
+        self.assertTrue(all(set(c['uv'])=={'north'} for c in light['cubes']))
+        attach=json.loads(pack['attachables/pumpkin.json'])['minecraft:attachable']['description']
+        self.assertEqual('entity_emissive',attach['materials']['glow'])
+        controller=json.loads(pack['render_controllers/cosmeticpets.json'])['render_controllers'][attach['render_controllers'][0]]
+        self.assertEqual({'pet_light':'Material.glow'},controller['materials'][-1])
+        data=pack['textures/cosmeticpets/pumpkin.tga']
+        self.assertEqual(2,data[2])
+        self.assertEqual(32,data[16])
+        names=list(json.loads(java_files()['assets/cosmeticpets/models/pet/pumpkin.json'])['textures'])
+        self.assertEqual(0,data[18+names.index('pumpkin_glow')*16*4+3])
 
     def test_manifest_and_translucent_texture(self):
         pack=files()

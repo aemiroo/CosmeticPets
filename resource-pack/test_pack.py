@@ -83,10 +83,10 @@ class PackTest(unittest.TestCase):
             return max(e['to'][0] for e in layer)-min(e['from'][0] for e in layer)
         self.assertLess(width(2),width(7))
         self.assertLess(width(12),width(7))
-    def test_pumpkin_has_eyes_and_smile_on_existing_front_faces(self):
+    def test_pumpkin_carved_openings_keep_face_design(self):
         model=builder.pumpkin_model()
         painted={(e['from'][0],e['from'][1]) for e in model['elements']
-                 if e['faces'].get('north',{}).get('texture')=='#pumpkin_face'}
+                 if e['faces'].get('north',{}).get('texture')=='#pumpkin_glow'}
         expected={(5,10),(10,10),(5,9),(6,9),(9,9),(10,9)}
         expected |= {(x,8) for x in (4,5,6,9,10,11)}
         expected |= {(7,7),(8,7),(7,6)}
@@ -95,7 +95,7 @@ class PackTest(unittest.TestCase):
         self.assertEqual(expected,painted)
         for element in model['elements']:
             for face,definition in element['faces'].items():
-                if definition['texture']=='#pumpkin_face':
+                if definition['texture']=='#pumpkin_glow':
                     self.assertEqual('north',face)
 
     def test_pumpkin_face_follows_rounded_body_without_flat_cut(self):
@@ -104,14 +104,32 @@ class PackTest(unittest.TestCase):
                for e in elements if 'north' in e['faces']}
         back={(e['from'][0],e['from'][1]):e['to'][2]
               for e in elements if 'south' in e['faces']}
-        # The face side must retain the same round silhouette as the back.
+        lit={(e['from'][0],e['from'][1]) for e in elements if e.get('light_emission')==15}
+        # Only the carved pixels move inward; uncarved rind stays rounded.
         for x in range(4,12):
             for y in range(4,11):
-                self.assertEqual(16,front[x,y]+back[x,y])
-        self.assertLess(front[7,7],front[4,7])
+                self.assertEqual(19 if (x,y) in lit else 16,front[x,y]+back[x,y])
+        self.assertLess(front[7,9],front[4,9])
         painted=[e for e in elements
-                 if e['faces'].get('north',{}).get('texture')=='#pumpkin_face']
+                 if e['faces'].get('north',{}).get('texture')=='#pumpkin_glow']
         self.assertGreater(len({e['from'][2] for e in painted}),1)
+
+    def test_carved_face_has_depth_walls_and_emissive_backing(self):
+        elements=builder.pumpkin_model()['elements']
+        glow=[e for e in elements if e.get('light_emission')==15]
+        self.assertTrue(glow)
+        occupied={tuple(e['from']) for e in elements}
+        for element in glow:
+            x,y,z=element['from']
+            self.assertEqual({'north'},set(element['faces']))
+            self.assertFalse(element['shade'])
+            for depth in (1,2,3):
+                self.assertNotIn((x,y,z-depth),occupied)
+        walls=[e for e in elements if any(f['texture']=='#pumpkin_inner'
+                                         for f in e['faces'].values())]
+        self.assertTrue(walls)
+        self.assertTrue(any(set(e['faces']) & {'up','down','east','west'} for e in walls))
+        self.assertTrue(all(not e.get('light_emission') for e in walls))
 
     def test_pumpkin_union_has_no_duplicate_or_internal_faces(self):
         model=builder.pumpkin_model()

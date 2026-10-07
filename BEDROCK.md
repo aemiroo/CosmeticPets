@@ -32,7 +32,7 @@ with optional floodgate. Geyser does not automatically convert Java resource pac
 
    Requiring the packs ensures that a Bedrock player who reaches the Java server has
    downloaded the pack. This changes Geyser's pack policy for **all** its packs.
-5. Install CosmeticPets 1.2.4 and add this section to `plugins/CosmeticPets/config.yml`:
+5. Install CosmeticPets 1.2.5 and add this section to `plugins/CosmeticPets/config.yml`:
 
    ```yaml
    bedrock:
@@ -79,3 +79,7 @@ Sources: [Geyser item mappings](https://geysermc.org/wiki/geyser/custom-items/),
 [Geyser packs](https://geysermc.org/wiki/geyser/packs/),
 [Geyser extensions](https://geysermc.org/wiki/geyser/extensions/),
 and [Microsoft geometry documentation](https://learn.microsoft.com/en-us/minecraft/creator/reference/content/visualreference/geometry.v1.16.0?view=minecraft-bedrock-stable).
+
+The carved pumpkin's interior uses a separate emissive bone and TGA light mask,
+so the glow does not depend on the display bridge translating a brightness override.
+This is a visual glow only; it does not illuminate nearby terrain.

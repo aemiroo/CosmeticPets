@@ -70,19 +70,41 @@ def pumpkin_model():
     smile = {(x,4) for x in range(4,12) if x not in (6,9)}
     smile |= {(x,3) for x in range(5,11)} | {(4,5),(11,5)}
     face_pixels = eyes | nose | smile
+    # Remove three voxels of rind at every face pixel, preserving the outer
+    # silhouette everywhere else. The lit back walls sit inside these openings.
+    removed=set()
+    light_stops=set()
+    for x,y in face_pixels:
+        front=min(z for cx,cy,z in cells if (cx,cy)==(x,y))
+        stop=front+3
+        light_stops.add((x,y,stop))
+        for z in range(front,stop):
+            removed.add((x,y,z))
+            materials.pop((x,y,z),None)
+    cells=set(materials)
     directions={'west':(-1,0,0),'east':(1,0,0),'down':(0,-1,0),
                 'up':(0,1,0),'north':(0,0,-1),'south':(0,0,1)}
     elements=[]
     for x,y,z in sorted(cells):
         shade=materials[x,y,z]
-        faces={face:{'uv':[0,0,16,16],'texture':'#'+(
-                   'pumpkin_face' if face=='north' and (x,y) in face_pixels else shade)}
-               for face,(dx,dy,dz) in directions.items() if (x+dx,y+dy,z+dz) not in cells}
+        faces={}
+        for face,(dx,dy,dz) in directions.items():
+            neighbour=(x+dx,y+dy,z+dz)
+            if neighbour in cells:
+                continue
+            texture='pumpkin_inner' if neighbour in removed else shade
+            faces[face]={'uv':[0,0,16,16],'texture':'#'+texture}
+        if (x,y,z) in light_stops:
+            # Separate the emitting front face from the normally lit rind.
+            faces.pop('north',None)
+            elements.append({'from':[x,y,z],'to':[x+1,y+1,z+1],
+                             'faces':{'north':{'uv':[0,0,16,16],'texture':'#pumpkin_glow'}},
+                             'light_emission':15,'shade':False})
         if faces:
             elements.append({'from':[x,y,z],'to':[x+1,y+1,z+1],'faces':faces})
     return {'credit':'Original round ribbed pumpkin companion.',
             'textures':{name:'cosmeticpets:pet/'+name for name in
-                        ('pumpkin_orange','pumpkin_rib','pumpkin_green','pumpkin_stem','pumpkin_face')},
+                        ('pumpkin_orange','pumpkin_rib','pumpkin_green','pumpkin_stem','pumpkin_inner','pumpkin_glow')},
             'elements':elements,
             'display':{'fixed':{'rotation':[0,0,0],'translation':[0,6,0],'scale':[1,1,1]}},
             'gui_light':'front'}
@@ -112,7 +134,7 @@ def files():
     result['assets/cosmeticpets/models/pet/pumpkin.json']=json.dumps(pumpkin_model()).encode()
     colors={'pumpkin_orange':(238,123,24,255),'pumpkin_rib':(213,98,18,255),
             'pumpkin_green':(74,101,32,255),'pumpkin_stem':(86,65,33,255),
-            'pumpkin_face':(49,27,19,255)}
+            'pumpkin_inner':(140,58,14,255),'pumpkin_glow':(255,197,74,255)}
     atlas=json.loads(result['assets/minecraft/atlases/items.json'])
     for name,color in colors.items():
         result['assets/cosmeticpets/textures/pet/'+name+'.png']=png(color)

@@ -29,8 +29,16 @@ def atlas(colors):
     raw = b''.join(b'\0'+row for _ in range(16))
     return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',width,16,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw))+chunk(b'IEND',b'')
 
+def tga(colors):
+    # Solid emissive materials interpret alpha as a light mask; zero is full glow.
+    width=16*len(colors)
+    header=struct.pack('<BBBHHBHHHHBB',0,0,2,0,0,0,0,0,width,16,32,0x28)
+    row=b''.join(bytes((c[2],c[1],c[0],c[3]))*16 for c in colors)
+    return header+row*16
+
 def geometry(pet, model, names):
     cubes = []
+    glowing = []
     translate = model['display']['fixed']['translation']
     for element in model['elements']:
         a, b = element['from'], element['to']
@@ -40,41 +48,57 @@ def geometry(pet, model, names):
             bedrock_face = {'east':'west','west':'east'}.get(face,face)
             tile = names.index(definition['texture'][1:])
             uv[bedrock_face] = {'uv':[tile*16,0], 'uv_size':[16,16]}
-        cubes.append({'origin':[8-b[0]-translate[0],a[1]+translate[1],a[2]-8+translate[2]],
+        destination = glowing if element.get('light_emission',0) else cubes
+        destination.append({'origin':[8-b[0]-translate[0],a[1]+translate[1],a[2]-8+translate[2]],
                       'size':[b[i]-a[i] for i in range(3)],'uv':uv})
     # The extension's geyser_z bone is at Y=8, with mapping y-offset=-0.5.
     # This keeps Java's item centre (and pumpkin's fixed translation) aligned.
+    bones=[{'name':'pet','binding':"'geyser_z'",'pivot':[0,8,0],'cubes':cubes}]
+    if glowing:
+        bones.append({'name':'pet_light','parent':'pet','pivot':[0,8,0],'cubes':glowing})
     return {'format_version':'1.16.0','minecraft:geometry':[{
         'description':{'identifier':'geometry.cosmeticpets.'+pet,
                        'texture_width':16*len(names),'texture_height':16,
                        'visible_bounds_width':3,'visible_bounds_height':3,
                        'visible_bounds_offset':[0,0.5,0]},
-        'bones':[{'name':'pet','binding':"'geyser_z'",'pivot':[0,8,0],'cubes':cubes}]}]}
+        'bones':bones}]}
 
 def files():
     source = java_files()
     result = {'manifest.json':encoded({'format_version':2,
         'header':{'name':'CosmeticPets Bedrock','description':'Original ghost and bouncing pumpkin companions',
-                  'uuid':'507ee74f-7d83-4f1d-8bdb-85b28f28796f','version':[1,2,4],'min_engine_version':[1,21,0]},
-        'modules':[{'type':'resources','uuid':'ea7e3a8b-f04e-4423-ae3c-8f79a89ad251','version':[1,2,4]}]}),
+                  'uuid':'507ee74f-7d83-4f1d-8bdb-85b28f28796f','version':[1,2,5],'min_engine_version':[1,21,0]},
+        'modules':[{'type':'resources','uuid':'ea7e3a8b-f04e-4423-ae3c-8f79a89ad251','version':[1,2,5]}]}),
         'LICENSE.txt':source['LICENSE.txt'],
         'render_controllers/cosmeticpets.json':encoded({'format_version':'1.8.0','render_controllers':{
             'controller.render.cosmeticpets':{'geometry':'Geometry.default',
                 'materials':[{'*':'Material.default'}],'textures':['Texture.default']}}})}
+    controllers=json.loads(result['render_controllers/cosmeticpets.json'])
+    controllers['render_controllers']['controller.render.cosmeticpets.pumpkin']={
+        'geometry':'Geometry.default','materials':[{'*':'Material.default'},{'pet_light':'Material.glow'}],
+        'textures':['Texture.default']}
+    result['render_controllers/cosmeticpets.json']=encoded(controllers)
     texture_data = {}
     for pet in PETS:
         model = json.loads(source['assets/cosmeticpets/models/pet/'+pet+'.json'])
         names = list(model['textures'])
         colors = [color(source['assets/'+model['textures'][n].replace(':','/textures/')+'.png']) for n in names]
-        result['textures/cosmeticpets/'+pet+'.png'] = atlas(colors)
+        if pet=='pumpkin':
+            mask=[c[:3]+bytes([0 if n=='pumpkin_glow' else 255])
+                  for n,c in zip(names,colors)]
+            result['textures/cosmeticpets/'+pet+'.tga'] = tga(mask)
+            result['textures/cosmeticpets/'+pet+'_icon.png'] = atlas(colors)
+        else:
+            result['textures/cosmeticpets/'+pet+'.png'] = atlas(colors)
         result['models/entity/'+pet+'.geo.json'] = encoded(geometry(pet,model,names))
         result['attachables/'+pet+'.json'] = encoded({'format_version':'1.10.0','minecraft:attachable':{
             'description':{'identifier':'cosmeticpets:'+pet,
-                'materials':{'default':'entity_alphablend' if pet=='ghost' else 'entity_alphatest'},
+                'materials':({'default':'entity_alphablend'} if pet=='ghost' else
+                             {'default':'entity_alphatest','glow':'entity_emissive'}),
                 'textures':{'default':'textures/cosmeticpets/'+pet},
                 'geometry':{'default':'geometry.cosmeticpets.'+pet},
-                'render_controllers':['controller.render.cosmeticpets']}}})
-        texture_data['cosmeticpets.'+pet] = {'textures':'textures/cosmeticpets/'+pet}
+                'render_controllers':['controller.render.cosmeticpets'+('.pumpkin' if pet=='pumpkin' else '')]}}})
+        texture_data['cosmeticpets.'+pet] = {'textures':'textures/cosmeticpets/'+pet+('_icon' if pet=='pumpkin' else '')}
     result['textures/item_texture.json'] = encoded({'resource_pack_name':'CosmeticPets','texture_name':'atlas.items','texture_data':texture_data})
     return result
 
