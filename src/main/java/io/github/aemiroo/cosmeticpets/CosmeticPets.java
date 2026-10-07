@@ -28,6 +28,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     private final Map<UUID, Pet> pets = new HashMap<>();
     private final Set<UUID> refreshing = new HashSet<>();
     private Preferences preferences;
+    private YetiUnlocks yetiUnlocks;
     private int interval;
     private final Set<UUID> ghostPackLoaded = new HashSet<>();
     private final Set<UUID> bedrockPlayers = new HashSet<>();
@@ -42,7 +43,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        try { preferences = new Preferences(getDataFolder().toPath().resolve("players.yml")); }
+        try { preferences = new Preferences(getDataFolder().toPath().resolve("players.yml"));
+            yetiUnlocks = new YetiUnlocks(getDataFolder().toPath().resolve("yeti-unlocks.yml")); }
         catch (IOException e) {
             getLogger().severe("Could not load players.yml. Correct or restore it before enabling CosmeticPets.");
             getServer().getPluginManager().disablePlugin(this); return;
@@ -130,7 +132,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             UUID id = owner.getUniqueId();
             var choice = preferences.get(id);
             if (choice != null && !choice.kind().modelled() && animationTick % 2 != 0) continue;
-            if (choice == null || (choice.kind() == PetKind.YETI && !owner.hasPermission("cosmeticpets.yeti.preview")) || !choice.summoned() || owner.isDead() || owner.getGameMode() == GameMode.SPECTATOR
+            if (choice == null || (choice.kind() == PetKind.YETI && !canUseYeti(owner)) || !choice.summoned() || owner.isDead() || owner.getGameMode() == GameMode.SPECTATOR
                     || owner.isInvisible() || !owner.hasPermission("cosmeticpets.use")) { remove(id); continue; }
             Pet pet = pets.get(id);
             if (pet == null || pet.kind != choice.kind() || !pet.position.getWorld().equals(owner.getWorld())) {
@@ -356,8 +358,18 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             pet.viewers.remove(viewerId);
         }
     }
+    /** Persist an earned Baby Yeti unlock, including for offline participants. */
+    public void unlockYeti(UUID playerId) throws IOException {
+        if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Unlock pets on the server thread");
+        yetiUnlocks.grant(playerId);
+    }
+    public boolean hasYetiUnlocked(UUID playerId) { return yetiUnlocks.contains(playerId); }
+    public boolean isPetPackReady(Player player) { return ghostPackLoaded.contains(player.getUniqueId()); }
+    private boolean canUseYeti(Player player) {
+        return player.hasPermission("cosmeticpets.yeti.preview") || hasYetiUnlocked(player.getUniqueId());
+    }
     private boolean choose(Player player, PetKind kind, boolean summoned) {
-        if (kind == PetKind.YETI && !player.hasPermission("cosmeticpets.yeti.preview")) return false;
+        if (kind == PetKind.YETI && !canUseYeti(player)) return false;
         try { preferences.set(player.getUniqueId(), new Preferences.Choice(kind, summoned)); }
         catch (IOException e) { player.sendMessage(ChatColor.RED + "Could not save your pet preference. Please try again."); return false; }
         remove(player.getUniqueId());
@@ -371,11 +383,11 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("Use this command in-game."); return true; }
         if (!player.hasPermission("cosmeticpets.use")) return true;
-        if (args.length == 0) { player.openInventory(new Menu(player.hasPermission("cosmeticpets.yeti.preview")).inventory); return true; }
+        if (args.length == 0) { player.openInventory(new Menu(canUseYeti(player)).inventory); return true; }
         if (args.length != 1) return false;
         var choice = preferences.get(player.getUniqueId());
         switch (args[0].toLowerCase(Locale.ROOT)) {
-            case "yeti" -> { if (player.hasPermission("cosmeticpets.yeti.preview")) choose(player, PetKind.YETI, true); else player.sendMessage(ChatColor.RED + "Baby Yeti is not unlocked yet."); }
+            case "yeti" -> { if (canUseYeti(player)) choose(player, PetKind.YETI, true); else player.sendMessage(ChatColor.RED + "Baby Yeti is not unlocked yet."); }
             case "snowman" -> choose(player, PetKind.SNOWMAN, true);
             case "reindeer" -> choose(player, PetKind.REINDEER, true);
             case "summon", "dismiss" -> {
@@ -388,7 +400,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length != 1 || !sender.hasPermission("cosmeticpets.use")) return List.of();
-        return (sender.hasPermission("cosmeticpets.yeti.preview") ? List.of("snowman", "reindeer", "yeti", "summon", "dismiss") : List.of("snowman", "reindeer", "summon", "dismiss")).stream()
+        return (sender instanceof Player player && canUseYeti(player) ? List.of("snowman", "reindeer", "yeti", "summon", "dismiss") : List.of("snowman", "reindeer", "summon", "dismiss")).stream()
                 .filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
     }
     private void forgetViewer(Player player) {
@@ -430,7 +442,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         if (!player.hasPermission("cosmeticpets.use")) return;
         if (event.getClick() != ClickType.LEFT && event.getClick() != ClickType.RIGHT) return;
         switch (event.getRawSlot()) {
-            case 4 -> { if (player.hasPermission("cosmeticpets.yeti.preview")) choose(player, PetKind.YETI, true); }
+            case 4 -> { if (canUseYeti(player)) choose(player, PetKind.YETI, true); }
             case 2 -> choose(player, PetKind.SNOWMAN, true);
             case 6 -> choose(player, PetKind.REINDEER, true);
             case 21, 23 -> {
@@ -464,7 +476,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     private static final class Menu implements InventoryHolder {
         final Inventory inventory = Bukkit.createInventory(this, 27, "Christmas Pets");
         Menu(boolean yetiPreview) {
-            if (yetiPreview) inventory.setItem(4, icon(Material.POWDER_SNOW_BUCKET, "Baby Yeti", "Admin teaser companion."));
+            if (yetiPreview) inventory.setItem(4, icon(Material.POWDER_SNOW_BUCKET, "Baby Yeti", "Your unlocked winter companion."));
             inventory.setItem(2, icon(Material.SNOWBALL, "Snowman", "A winter companion; requires the pet pack."));
             inventory.setItem(6, icon(Material.SWEET_BERRIES, "Reindeer", "A playful companion; requires the pet pack."));
             inventory.setItem(21, icon(Material.LIME_DYE, "Summon", "Summon your saved pet."));
