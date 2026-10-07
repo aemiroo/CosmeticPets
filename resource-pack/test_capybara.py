@@ -5,10 +5,10 @@ from build_bedrock import files as bedrock_files
 class CapybaraPackTest(unittest.TestCase):
     def test_capybara_has_four_legs_and_diagonal_gait(self):
         model=walk_model('capybara',6)
-        legs={tuple(e['rotation']['origin']):e['rotation'] for e in model['elements'] if 'rotation' in e and e['rotation']['axis']=='x'}
+        legs={tuple(e['rotation']['origin']):e['rotation'] for e in model['elements'] if 'rotation' in e and e['rotation']['axis']=='x' and e['rotation']['origin'][1]==5}
         self.assertEqual(4,len(legs))
-        self.assertEqual(legs[5,3,8]['angle'],legs[11,3,13]['angle'])
-        self.assertEqual(-legs[5,3,8]['angle'],legs[5,3,13]['angle'])
+        self.assertEqual(legs[5,5,8]['angle'],legs[11,5,13]['angle'])
+        self.assertEqual(-legs[5,5,8]['angle'],legs[5,5,13]['angle'])
         for frame in range(24):
             for e in walk_model('capybara',frame)['elements']:
                 if 'rotation' in e:self.assertLessEqual(abs(e['rotation']['angle']),22.5)
@@ -24,10 +24,10 @@ class CapybaraPackTest(unittest.TestCase):
         from capybara_model import model
         neutral,closed=model(idle=0),model(idle=2)
         body=neutral['elements'][0]
-        self.assertEqual(12,body['to'][1])
-        self.assertEqual(13,neutral['elements'][1]['to'][1])
-        def eyes(m):return [e for e in m['elements'] if any(f['texture']=='#capy_eye' for f in e['faces'].values())]
-        self.assertEqual(2,len(eyes(neutral)))
+        self.assertEqual(13,body['to'][1])
+        self.assertEqual(14,neutral['elements'][1]['to'][1])
+        def eyes(m):return [e for e in m['elements'] if any(f['texture'] in ('#capy_eye','#capy_white') for f in e['faces'].values())]
+        self.assertEqual(4,len(eyes(neutral)))
         for a,b in zip(eyes(neutral),eyes(closed)):
             self.assertEqual(a['from'],b['from'])
             self.assertLess(b['to'][1]-b['from'][1],a['to'][1]-a['from'][1])

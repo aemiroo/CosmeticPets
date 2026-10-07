@@ -110,3 +110,7 @@ The Capybara gait now uses 24 small sinusoidal shoulder/hip rotations, paired di
 ### 1.6.3 — Capybara size
 
 Capybara now renders 35% larger by default. `capybara.scale` in config.yml accepts 0.5–2.0; restart after changing it. Existing configs use 1.35 when the setting is absent. Collision clearance and display bounds scale with the model. Requires only the new plugin JAR when the 1.6.2 pack is installed.
+
+### 1.6.4 — multi-view Capybara reference
+
+Adds white eye highlights, a slightly lowered snout, longer brown/dark legs, a small raised tail and larger mottled fur patches from the supplied front, rear, side and top references. Keeps the 1.35 default scale, 24-frame quadruped walk and rare blink. Update both resource packs.
