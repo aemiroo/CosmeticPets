@@ -98,18 +98,20 @@ class PackTest(unittest.TestCase):
                 if definition['texture']=='#pumpkin_face':
                     self.assertEqual('north',face)
 
-    def test_pumpkin_face_has_no_protruding_centre_rib(self):
-        model=builder.pumpkin_model()
-        face=[e for e in model['elements'] if 'north' in e['faces']
-              and 4<=e['from'][0]<=11 and 4<=e['from'][1]<=10]
-        self.assertTrue(face)
-        painted=[e for e in face if e['from'][1]>=6
-                 and e['faces']['north']['texture']=='#pumpkin_face']
-        self.assertEqual({3},{e['from'][2] for e in painted})
-        centre=[e for e in face if e['from'][0] in (7,8) and 5<=e['from'][1]<=9]
-        self.assertEqual({3},{e['from'][2] for e in centre})
-        self.assertTrue(all(e['faces']['north']['texture'] in
-                           ('#pumpkin_orange','#pumpkin_face') for e in centre))
+    def test_pumpkin_face_follows_rounded_body_without_flat_cut(self):
+        elements=builder.pumpkin_model()['elements']
+        front={(e['from'][0],e['from'][1]):e['from'][2]
+               for e in elements if 'north' in e['faces']}
+        back={(e['from'][0],e['from'][1]):e['to'][2]
+              for e in elements if 'south' in e['faces']}
+        # The face side must retain the same round silhouette as the back.
+        for x in range(4,12):
+            for y in range(4,11):
+                self.assertEqual(16,front[x,y]+back[x,y])
+        self.assertLess(front[7,7],front[4,7])
+        painted=[e for e in elements
+                 if e['faces'].get('north',{}).get('texture')=='#pumpkin_face']
+        self.assertGreater(len({e['from'][2] for e in painted}),1)
 
     def test_pumpkin_union_has_no_duplicate_or_internal_faces(self):
         model=builder.pumpkin_model()

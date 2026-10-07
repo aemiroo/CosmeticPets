@@ -47,10 +47,6 @@ def pumpkin_model():
                 radius=6.5*(1+0.025*math.cos(8*angle))
                 if (dx*dx+dz*dz)/(radius*radius)+(dy/5.5)**2 <= 1:
                     cells.add((x,y,z))
-    # A shallow, flat face area removes the central protruding lobe while
-    # retaining the round silhouette and ribbing around the sides and back.
-    cells = {cell for cell in cells
-             if not (4 <= cell[0] <= 11 and 4 <= cell[1] <= 10 and cell[2] < 3)}
     # One solid union: the green cap intersects the orange body at Y=12.
     # Emitting those as separate boxes produces coplanar top faces and flicker.
     materials = {cell: ('pumpkin_rib'
@@ -79,8 +75,6 @@ def pumpkin_model():
     elements=[]
     for x,y,z in sorted(cells):
         shade=materials[x,y,z]
-        if z == 3 and 4 <= x <= 11 and 4 <= y <= 10:
-            shade='pumpkin_orange'
         faces={face:{'uv':[0,0,16,16],'texture':'#'+(
                    'pumpkin_face' if face=='north' and (x,y) in face_pixels else shade)}
                for face,(dx,dy,dz) in directions.items() if (x+dx,y+dy,z+dz) not in cells}
