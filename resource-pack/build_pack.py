@@ -266,7 +266,9 @@ def walk_model(pet, frame):
             sign=1 if side==0 else -1
             if kind=='arm':
                 pivot=[2.5 if side==0 else 13.5,9,8.5]
-                angle=-18*swing*sign
+                # Iron golem arms swing together, using a triangular cycle.
+                golem_swing=1-4*abs((frame/12+.25)%1-.5)
+                angle=-18*golem_swing
             else:
                 pivot=[6 if side==0 else 10,3,7.5]
                 angle=25*swing*sign

@@ -12,6 +12,11 @@ class WinterPackTest(unittest.TestCase):
             neutral=builder(0)
             for frame in range(12):
                 pose=builder(frame)
+                if pet=='yeti':
+                    arm_angles={limb(pet,e['from']):e['rotation']['angle']
+                                for e in pose['elements']
+                                if limb(pet,e['from']) in (('arm',0),('arm',1))}
+                    self.assertEqual(arm_angles['arm',0],arm_angles['arm',1])
                 for old,new in zip(neutral['elements'],pose['elements']):
                     self.assertEqual(old['from'],new['from'])
                     self.assertEqual(old['to'],new['to'])
@@ -25,7 +30,7 @@ class WinterPackTest(unittest.TestCase):
                     for e in builder(3)['elements'] if 'rotation' in e}
             if pet=='yeti':
                 self.assertEqual(-angles['leg',0],angles['leg',1])
-                self.assertEqual(-angles['arm',0],angles['arm',1])
+                self.assertEqual(angles['arm',0],angles['arm',1])
                 self.assertLess(angles['arm',0]*angles['leg',0],0)
             else:
                 self.assertEqual(angles['leg',5,7],angles['leg',10,11])
