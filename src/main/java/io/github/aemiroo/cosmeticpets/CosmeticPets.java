@@ -286,15 +286,19 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             owner.spawnParticle(Particle.HEART, pet.position.clone().add(0, 0.5, 0), 3, 0.2, 0.1, 0.2, 0);
         }
         Location displayed = pet.position.clone();
+        int snowParticles = 0;
         if (pet.scareTicks > 0) {
             Location hop = displayed.clone().add(0, RareScare.hop(pet.scareTicks), 0);
             if (clear(hop, PetKind.GHOST)) displayed = hop;
             pet.scareTicks--;
         }
         if (pet.kind == PetKind.SNOWMAN) {
-            long tick = animationTick + Math.floorMod(owner.getUniqueId().getLeastSignificantBits(), 80);
+            long tick = animationTick + Math.floorMod(owner.getUniqueId().getLeastSignificantBits(), 32);
             Location animated = displayed.clone().add(0, WinterMotion.hop(pet.kind, tick), 0);
-            if (clear(animated, pet.kind)) displayed = animated;
+            if (clear(animated, pet.kind)) {
+                displayed = animated;
+                snowParticles = WinterMotion.snowParticles(tick);
+            }
         }
         if (pet.kind == PetKind.REINDEER) {
             double moved = pet.displayLast == null ? 0 : Math.hypot(
@@ -339,6 +343,9 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                     || !viewer.canSee(owner) || viewer.getLocation().distanceSquared(pet.position) > 48 * 48) continue;
             visible.add(viewer.getUniqueId());
             if (pet.viewers.add(viewer.getUniqueId())) viewer.showEntity(this, pet.display);
+            if (snowParticles > 0 && viewer.getLocation().distanceSquared(displayed) <= 24 * 24)
+                viewer.spawnParticle(Particle.SNOWFLAKE, displayed.clone().add(0,0.08,0),
+                        snowParticles, 0.22, 0.04, 0.22, 0.015);
         }
         for (UUID viewerId : new HashSet<>(pet.viewers)) if (!visible.contains(viewerId)) {
             Player viewer = Bukkit.getPlayer(viewerId);

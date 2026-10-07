@@ -4,8 +4,18 @@ package io.github.aemiroo.cosmeticpets;
 final class WinterMotion {
     private WinterMotion() {}
     static double hop(PetKind kind, long tick) {
-        if (kind == PetKind.SNOWMAN) return 0.035 * (1 - Math.cos(2 * Math.PI * Math.floorMod(tick, 80) / 80.0));
+        if (kind == PetKind.SNOWMAN) {
+            int phase = Math.floorMod(tick,32);
+            if (phase >= 22) return 0;
+            double t = phase / 22.0;
+            return 0.35 * 4 * t * (1-t);
+        }
         return 0;
+    }
+    static int snowParticles(long tick) {
+        int phase = Math.floorMod(tick,32);
+        if (phase == 0 || phase == 22) return 5;
+        return phase < 22 && phase % 4 == 0 ? 2 : 0;
     }
     static int walkFrame(double distance) {
         return Math.floorMod((int)Math.floor(distance / 0.9 * 12),12);
