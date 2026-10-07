@@ -20,6 +20,7 @@ final class Preferences {
             try {
                 UUID id = UUID.fromString(key);
                 PetKind kind = PetKind.valueOf(yaml.getString(key + ".pet", "").toUpperCase(Locale.ROOT));
+                if (kind != PetKind.SNOWMAN && kind != PetKind.REINDEER) kind = PetKind.SNOWMAN;
                 choices.put(id, new Choice(kind, yaml.getBoolean(key + ".summoned", false)));
             } catch (IllegalArgumentException e) { throw new IOException("Invalid pet preference", e); }
         }

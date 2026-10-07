@@ -343,11 +343,6 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         if (args.length != 1) return false;
         var choice = preferences.get(player.getUniqueId());
         switch (args[0].toLowerCase(Locale.ROOT)) {
-            case "cat" -> choose(player, PetKind.CAT, true);
-            case "bat" -> choose(player, PetKind.BAT, true);
-            case "zombie" -> choose(player, PetKind.ZOMBIE, true);
-            case "ghost" -> choose(player, PetKind.GHOST, true);
-            case "pumpkin" -> choose(player, PetKind.PUMPKIN, true);
             case "snowman" -> choose(player, PetKind.SNOWMAN, true);
             case "reindeer" -> choose(player, PetKind.REINDEER, true);
             case "summon", "dismiss" -> {
@@ -360,7 +355,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length != 1 || !sender.hasPermission("cosmeticpets.use")) return List.of();
-        return List.of("cat", "bat", "zombie", "ghost", "pumpkin", "snowman", "reindeer", "summon", "dismiss").stream()
+        return List.of("snowman", "reindeer", "summon", "dismiss").stream()
                 .filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
     }
     private void forgetViewer(Player player) {
@@ -404,11 +399,6 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         switch (event.getRawSlot()) {
             case 2 -> choose(player, PetKind.SNOWMAN, true);
             case 6 -> choose(player, PetKind.REINDEER, true);
-            case 9 -> choose(player, PetKind.PUMPKIN, true);
-            case 11 -> choose(player, PetKind.CAT, true);
-            case 13 -> choose(player, PetKind.BAT, true);
-            case 15 -> choose(player, PetKind.ZOMBIE, true);
-            case 17 -> choose(player, PetKind.GHOST, true);
             case 21, 23 -> {
                 var choice = preferences.get(player.getUniqueId());
                 if (choice != null) choose(player, choice.kind(), event.getRawSlot() == 21);
@@ -438,15 +428,10 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         meta.setLore(List.of(ChatColor.GRAY + lore)); item.setItemMeta(meta); return item;
     }
     private static final class Menu implements InventoryHolder {
-        final Inventory inventory = Bukkit.createInventory(this, 27, "Cosmetic Pets");
+        final Inventory inventory = Bukkit.createInventory(this, 27, "Christmas Pets");
         Menu() {
             inventory.setItem(2, icon(Material.SNOWBALL, "Snowman", "A winter companion; requires the pet pack."));
             inventory.setItem(6, icon(Material.SWEET_BERRIES, "Reindeer", "A playful companion; requires the pet pack."));
-            inventory.setItem(9, icon(Material.PUMPKIN, "Pumpkin", "A bouncing companion; requires the pet pack."));
-            inventory.setItem(11, icon(Material.CAT_SPAWN_EGG, "Cat", "Click to summon your companion."));
-            inventory.setItem(13, icon(Material.BAT_SPAWN_EGG, "Bat", "Click to summon your companion."));
-            inventory.setItem(15, icon(Material.ZOMBIE_SPAWN_EGG, "Zombie", "Click to summon your companion."));
-            inventory.setItem(17, icon(Material.GHAST_TEAR, "Ghost", "Requires the optional ghost resource pack."));
             inventory.setItem(21, icon(Material.LIME_DYE, "Summon", "Summon your saved pet."));
             inventory.setItem(23, icon(Material.RED_DYE, "Dismiss", "Dismiss your pet; keep your selection."));
         }

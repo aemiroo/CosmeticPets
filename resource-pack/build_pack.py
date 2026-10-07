@@ -163,7 +163,7 @@ def pumpkin_model():
             'elements':elements,
             'display':{'fixed':{'rotation':[0,0,0],'translation':[0,6,0],'scale':[1,1,1]}},
             'gui_light':'front'}
-def files():
+def legacy_files():
     elements = shell() + [
                 cube([5,9,2.85],[6.5,11,3],'dark'), cube([9.5,9,2.85],[11,11,3],'dark'),
                 cube([7.25,6.5,2.85],[8.75,8,3],'dark'),
@@ -203,6 +203,23 @@ def files():
                                  'sprite':'cosmeticpets:pet/'+name})
     result['assets/minecraft/atlases/items.json']=json.dumps(atlas).encode()
     return result
+def files():
+    source=legacy_files()
+    keep={'snowman','reindeer'}
+    models={p:json.loads(source['assets/cosmeticpets/models/pet/'+p+'.json']) for p in keep}
+    textures={t for m in models.values() for t in m['textures'].values()}
+    result={'pack.mcmeta':json.dumps({'pack':{'description':'CosmeticPets - Christmas companions','min_format':[97,1],'max_format':[97,1]}}).encode(),
+            'LICENSE.txt':b'Original CosmeticPets Christmas models and textures: MIT License.\n'}
+    for pet in sorted(keep):
+        for path in ('assets/cosmeticpets/items/'+pet+'.json','assets/cosmeticpets/models/pet/'+pet+'.json'):
+            result[path]=source[path]
+    for texture in sorted(textures):
+        path='assets/'+texture.replace(':','/textures/')+'.png'
+        result[path]=source[path]
+    result['assets/minecraft/atlases/items.json']=json.dumps({'sources':[
+        {'type':'minecraft:single','resource':t,'sprite':t} for t in sorted(textures)]}).encode()
+    return result
+
 if __name__ == '__main__':
     output = ROOT / 'target' / 'CosmeticPets-Ghost-Pack.zip'
     output.parent.mkdir(parents=True, exist_ok=True)

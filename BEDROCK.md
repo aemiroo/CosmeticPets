@@ -88,8 +88,15 @@ This is a visual glow only; it does not illuminate nearby terrain.
 
 Use `/pets snowman` or `/pets reindeer`, or select them in `/pets`. The snowman
 wears a red scarf and top hat; the reindeer has antlers and a red nose. Both are
-cosmetic only and use the shared collision-aware follow motion. Existing pets
-and saved selections remain available. Replace the Java/Bedrock packs and both
+cosmetic only and use the shared collision-aware follow motion. Retired selections migrate to snowman in 1.3.1. Replace the Java/Bedrock packs and both
 Geyser mapping files with the new build; restart and reconnect. Bedrock still
 requires the separately installed GeyserDisplayEntity extension and its pack.
 Bedrock rendering remains experimental until verified with a real client.
+
+### Christmas-only lineup (1.3.1)
+
+Only snowman and reindeer are available in commands, autocomplete, and the menu.
+Cat, bat, zombie, ghost, and pumpkin have been retired. Saved retired selections
+load as snowman, preserving the summoned/dismissed state. Both resource packs
+now contain only Christmas models; update packs and both Geyser mapping files.
+The Java pack filename and release tag remain unchanged for existing config URLs.
