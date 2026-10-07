@@ -110,10 +110,15 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         return null;
     }
     private Collision.Point point(Location at) { return new Collision.Point(at.getX(), at.getY(), at.getZ()); }
+    private float capybaraScale() {
+        double configured=getConfig().getDouble("capybara.scale",1.35);
+        return Double.isFinite(configured)?(float)Math.max(.5,Math.min(2,configured)):1.35f;
+    }
     private boolean clear(Location at, PetKind kind) {
         double halfWidth = kind.modelled() ? 0.5 : 0.35;
         if (kind == PetKind.GHOST) at = at.clone().add(0, -0.5, 0);
         double height = switch (kind) { case CAT -> 0.75; case BAT -> 0.95; case GHOST, PUMPKIN, SNOWMAN, REINDEER, YETI, CAPYBARA -> 1.0; case ZOMBIE -> 1.95; };
+        if (kind == PetKind.CAPYBARA) { halfWidth=.5*capybaraScale();height=capybaraScale(); }
         World world = at.getWorld();
         int minX = (int) Math.floor(at.getX() - halfWidth), maxX = (int) Math.floor(at.getX() + halfWidth);
         int minZ = (int) Math.floor(at.getZ() - halfWidth), maxZ = (int) Math.floor(at.getZ() + halfWidth);
@@ -271,12 +276,17 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                 display.setItemStack(model);
                 display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
                 display.setBillboard(Display.Billboard.FIXED);
+                if (pet.kind == PetKind.CAPYBARA) {
+                    float size=capybaraScale();
+                    display.setTransformation(new Transformation(new Vector3f(),new Quaternionf(),
+                            new Vector3f(size,size,size),new Quaternionf()));
+                }
                 if (pet.kind == PetKind.GHOST) display.setBrightness(new Display.Brightness(15, 15));
                 display.setInterpolationDuration(1);
                 display.setTeleportDuration(1);
                 display.setViewRange(0.75f);
-                display.setDisplayWidth(0.9f);
-                display.setDisplayHeight(0.95f);
+                display.setDisplayWidth(pet.kind == PetKind.CAPYBARA ? capybaraScale() : 0.9f);
+                display.setDisplayHeight(pet.kind == PetKind.CAPYBARA ? capybaraScale() : 0.95f);
             });
         }
         if (pet.kind == PetKind.GHOST && animationTick % 20 == 0 && pet.scareTicks == 0

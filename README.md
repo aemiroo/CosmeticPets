@@ -106,3 +106,7 @@ Rebuilds Capybara with a boxy body, long blunt snout, small tilted ears, dark fe
 Raises the back to just below head height, wraps dark muzzle color around the snout tip, moves both eyes toward the ears and darkens the legs. Retains the rare idle blink and four-leg gait.
 
 The Capybara gait now uses 24 small sinusoidal shoulder/hip rotations, paired diagonally like a quadruped. Animation advances with distance travelled and pauses when stationary, replacing the previous three-angle snapping. Modern model rotation support: https://www.minecraft.net/en-us/article/minecraft-snapshot-25w46a
+
+### 1.6.3 — Capybara size
+
+Capybara now renders 35% larger by default. `capybara.scale` in config.yml accepts 0.5–2.0; restart after changing it. Existing configs use 1.35 when the setting is absent. Collision clearance and display bounds scale with the model. Requires only the new plugin JAR when the 1.6.2 pack is installed.

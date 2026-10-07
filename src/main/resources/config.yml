@@ -7,3 +7,7 @@ bedrock:
   # Enable only after installing both Bedrock packs, mappings and GeyserDisplayEntity.
   # Requires local Geyser-Spigot. In Geyser, force-resource-packs must be true.
   enabled: false
+
+capybara:
+  # Display size multiplier (0.5–2.0). Applies to both Java and Bedrock displays.
+  scale: 1.35
