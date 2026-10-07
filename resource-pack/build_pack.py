@@ -37,7 +37,18 @@ def shell():
         if faces:
             elements.append({'from':[x,y,z],'to':[x+1,y+1,z+1],'faces':faces})
     return elements
-def winter_model(pet):
+def limb(pet, cell):
+    x,y,z=cell
+    if pet=='reindeer' and y<5 and x in (5,10) and z in (7,11):
+        return ('leg',x,z)
+    if pet=='yeti':
+        if y<3 and x in (5,6,9,10) and 5<=z<10:
+            return ('leg',0 if x<8 else 1)
+        if (1<=x<4 or 12<=x<15) and 1<=y<10 and 6<=z<11:
+            return ('arm',0 if x<8 else 1)
+    return None
+
+def winter_model(pet, articulated=False):
     # Unite solid voxels first: only external faces are emitted, avoiding seams.
     cells={}
     def box(a,b,material):
@@ -114,7 +125,9 @@ def winter_model(pet):
     elements=[]
     for (x,y,z),material in sorted(cells.items()):
         faces={f:{'uv':[0,0,16,16],'texture':'#'+material}
-               for f,(dx,dy,dz) in directions.items() if (x+dx,y+dy,z+dz) not in cells}
+               for f,(dx,dy,dz) in directions.items()
+               if (x+dx,y+dy,z+dz) not in cells or
+               (articulated and limb(pet,(x,y,z))!=limb(pet,(x+dx,y+dy,z+dz)))}
         if faces: elements.append({'from':[x,y,z],'to':[x+1,y+1,z+1],'faces':faces})
     names=sorted({e['texture'][1:] for c in elements for e in c['faces'].values()})
     return {'credit':'Original CosmeticPets Christmas companion.',
@@ -235,39 +248,37 @@ def legacy_files():
                                  'sprite':'cosmeticpets:pet/'+name})
     result['assets/minecraft/atlases/items.json']=json.dumps(atlas).encode()
     return result
-def reindeer_walk_model(frame):
-    model=winter_model('reindeer')
-    phase=2*math.pi*frame/12
-    # Move each diagonal pair in opposite directions. The head and body stay still.
-    for e in model['elements']:
-        x,y,z=e['from']
-        if y<5 and x in (5,10) and z in (7,11):
+def walk_model(pet, frame):
+    # Closed surfaces at each joint prevent holes when limbs rotate away.
+    model=winter_model(pet, articulated=True)
+    swing=math.sin(2*math.pi*frame/12)
+    for element in model['elements']:
+        part=limb(pet, element['from'])
+        if part is None: continue
+        if pet=='reindeer':
+            _,x,z=part
+            # Vanilla quadruped gait: diagonal legs swing together.
             sign=1 if (x,z) in ((5,7),(10,11)) else -1
-            swing=math.sin(phase)*sign
-            dz=round(0.9*swing,6)
-            dy=round(max(0,swing)*0.4,6)
-            for bound in ('from','to'):
-                e[bound][1]+=dy
-                e[bound][2]+=dz
+            pivot=[x+.5,5,z+.5]
+            angle=28*swing*sign
+        else:
+            kind,side=part
+            sign=1 if side==0 else -1
+            if kind=='arm':
+                pivot=[2.5 if side==0 else 13.5,9,8.5]
+                angle=-18*swing*sign
+            else:
+                pivot=[6 if side==0 else 10,3,7.5]
+                angle=25*swing*sign
+        element['rotation']={'origin':pivot,'axis':'x',
+                             'angle':round(angle,6),'rescale':False}
     return model
 
+def reindeer_walk_model(frame):
+    return walk_model('reindeer',frame)
+
 def yeti_walk_model(frame):
-    model=winter_model('yeti')
-    phase=2*math.pi*frame/12
-    for e in model['elements']:
-        x,y,z=e['from']
-        leg=y<3 and x in (5,6,9,10) and 5<=z<10
-        arm=(x<4 or x>=12) and y<10 and 6<=z<11
-        if not (leg or arm): continue
-        sign=1 if x<8 else -1
-        swing=math.sin(phase)*sign
-        if arm: swing=-swing
-        dz=round((0.65 if arm else 0.7)*swing,6)
-        dy=round(max(0,swing)*0.35,6) if leg else 0
-        for bound in ('from','to'):
-            e[bound][1]+=dy
-            e[bound][2]+=dz
-    return model
+    return walk_model('yeti',frame)
 
 def files():
     source=legacy_files()

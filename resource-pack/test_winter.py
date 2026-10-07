@@ -1,5 +1,5 @@
 import json, unittest
-from build_pack import files, winter_model, reindeer_walk_model, yeti_walk_model
+from build_pack import files, winter_model, reindeer_walk_model, yeti_walk_model, limb
 from build_bedrock import files as bedrock_files, mappings
 class WinterPackTest(unittest.TestCase):
     def test_only_christmas_models_are_published(self):
@@ -7,19 +7,42 @@ class WinterPackTest(unittest.TestCase):
         self.assertEqual({'snowman','reindeer','yeti'}|{pet+'_walk_'+str(i) for pet in ('reindeer','yeti') for i in range(12)},{p.split('/')[-1][:-5] for p in java if p.startswith('assets/cosmeticpets/items/')})
         self.assertEqual({'snowman','reindeer','yeti'}|{pet+'_walk_'+str(i) for pet in ('reindeer','yeti') for i in range(12)},{p.split('/')[-1][:-5] for p in bedrock if p.startswith('attachables/')})
         self.assertEqual(27,len(mappings()['items']['minecraft:paper']))
-    def test_gait_moves_only_legs_and_keeps_them_in_collision_bounds(self):
-        idle=winter_model('reindeer')
-        for frame in range(12):
-            pose=reindeer_walk_model(frame)
-            self.assertEqual(len(idle['elements']),len(pose['elements']))
-            for original,animated in zip(idle['elements'],pose['elements']):
-                x,y,z=original['from']
-                if not (y<5 and x in (5,10) and z in (7,11)):
-                    self.assertEqual(original,animated)
-                for bound in ('from','to'):
-                    self.assertTrue(all(0<=v<=16 for v in animated[bound]))
-        self.assertEqual(idle['elements'],reindeer_walk_model(0)['elements'])
-        self.assertNotEqual(reindeer_walk_model(3)['elements'],reindeer_walk_model(9)['elements'])
+    def test_joint_rotations_preserve_limb_shape_and_opposite_gait(self):
+        for pet,builder in (('reindeer',reindeer_walk_model),('yeti',yeti_walk_model)):
+            neutral=builder(0)
+            for frame in range(12):
+                pose=builder(frame)
+                for old,new in zip(neutral['elements'],pose['elements']):
+                    self.assertEqual(old['from'],new['from'])
+                    self.assertEqual(old['to'],new['to'])
+                    self.assertEqual(old['faces'],new['faces'])
+                    if limb(pet,old['from']) is None:
+                        self.assertEqual(old,new)
+                    else:
+                        self.assertEqual('x',new['rotation']['axis'])
+                        self.assertLessEqual(abs(new['rotation']['angle']),28)
+            angles={limb(pet,e['from']):e['rotation']['angle']
+                    for e in builder(3)['elements'] if 'rotation' in e}
+            if pet=='yeti':
+                self.assertEqual(-angles['leg',0],angles['leg',1])
+                self.assertEqual(-angles['arm',0],angles['arm',1])
+                self.assertLess(angles['arm',0]*angles['leg',0],0)
+            else:
+                self.assertEqual(angles['leg',5,7],angles['leg',10,11])
+                self.assertEqual(-angles['leg',5,7],angles['leg',5,11])
+    def test_bedrock_retains_every_joint_pivot_and_rotation(self):
+        java,bedrock=files(),bedrock_files()
+        for pet in ('yeti_walk_3','reindeer_walk_3'):
+            model=json.loads(java['assets/cosmeticpets/models/pet/'+pet+'.json'])
+            geo=json.loads(bedrock['models/entity/'+pet+'.geo.json'])
+            cubes=geo['minecraft:geometry'][0]['bones'][0]['cubes']
+            for element,cube in zip(model['elements'],cubes):
+                if 'rotation' not in element:
+                    self.assertNotIn('rotation',cube)
+                    continue
+                r=element['rotation'];x,y,z=r['origin']
+                self.assertEqual([8-x,y+8,z-8],cube['pivot'])
+                self.assertEqual([-r['angle'],0,0],cube['rotation'])
     def test_yeti_has_flat_face_side_horns_and_patterned_fur(self):
         model=winter_model('yeti')
         cells={tuple(e['from']):e for e in model['elements']}
@@ -32,10 +55,10 @@ class WinterPackTest(unittest.TestCase):
         self.assertEqual(14,max(e['to'][1] for e in model['elements']))
     def test_yeti_walking_moves_limbs_and_horns_project_forward(self):
         idle=winter_model('yeti')
-        self.assertEqual(idle['elements'],yeti_walk_model(0)['elements'])
+        self.assertTrue(all(e.get('rotation',{}).get('angle',0)==0 for e in yeti_walk_model(0)['elements']))
         self.assertNotEqual(yeti_walk_model(3)['elements'],yeti_walk_model(9)['elements'])
         for frame in range(12):
-            for old,new in zip(idle['elements'],yeti_walk_model(frame)['elements']):
+            for old,new in zip(yeti_walk_model(0)['elements'],yeti_walk_model(frame)['elements']):
                 if any(face['texture']=='#yeti_horn' for face in old['faces'].values()):
                     self.assertEqual(old,new)
         horns=[e for e in idle['elements'] if any(f['texture']=='#yeti_horn' for f in e['faces'].values())]

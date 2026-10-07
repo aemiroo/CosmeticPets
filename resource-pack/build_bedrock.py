@@ -49,8 +49,15 @@ def geometry(pet, model, names):
             tile = names.index(definition['texture'][1:])
             uv[bedrock_face] = {'uv':[tile*16,0], 'uv_size':[16,16]}
         destination = glowing if element.get('light_emission',0) else cubes
-        destination.append({'origin':[8-b[0]-translate[0],a[1]+translate[1],a[2]-8+translate[2]],
-                      'size':[b[i]-a[i] for i in range(3)],'uv':uv})
+        cube={'origin':[8-b[0]-translate[0],a[1]+translate[1],a[2]-8+translate[2]],
+                      'size':[b[i]-a[i] for i in range(3)],'uv':uv}
+        if 'rotation' in element:
+            rotation=element['rotation']
+            px,py,pz=rotation['origin']
+            cube['pivot']=[8-px-translate[0],py+translate[1],pz-8+translate[2]]
+            # Bedrock cube rotations use the opposite X rotation convention.
+            cube['rotation']=[-rotation['angle'],0,0]
+        destination.append(cube)
     # The extension's geyser_z bone is at Y=8, with mapping y-offset=-0.5.
     # This keeps Java's item centre (and pumpkin's fixed translation) aligned.
     bones=[{'name':'pet','binding':"'geyser_z'",'pivot':[0,8,0],'cubes':cubes}]
@@ -67,8 +74,8 @@ def files():
     source = java_files()
     result = {'manifest.json':encoded({'format_version':2,
         'header':{'name':'CosmeticPets Bedrock','description':'Original Christmas companions',
-                  'uuid':'507ee74f-7d83-4f1d-8bdb-85b28f28796f','version':[1,4,2],'min_engine_version':[1,21,0]},
-        'modules':[{'type':'resources','uuid':'ea7e3a8b-f04e-4423-ae3c-8f79a89ad251','version':[1,3,2]}]}),
+                  'uuid':'507ee74f-7d83-4f1d-8bdb-85b28f28796f','version':[1,4,3],'min_engine_version':[1,21,0]},
+        'modules':[{'type':'resources','uuid':'ea7e3a8b-f04e-4423-ae3c-8f79a89ad251','version':[1,4,3]}]}),
         'LICENSE.txt':source['LICENSE.txt'],
         'render_controllers/cosmeticpets.json':encoded({'format_version':'1.8.0','render_controllers':{
             'controller.render.cosmeticpets':{'geometry':'Geometry.default',
