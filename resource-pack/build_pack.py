@@ -341,6 +341,11 @@ def files():
     atlas=json.loads(result['assets/minecraft/atlases/items.json'])
     atlas['sources'].append({'type':'minecraft:single','resource':'cosmeticpets:pet/locked_black','sprite':'cosmeticpets:pet/locked_black'})
     result['assets/minecraft/atlases/items.json']=json.dumps(atlas).encode()
+    for path,data in list(result.items()):
+        if path.startswith('assets/cosmeticpets/models/pet/') and path.endswith('.json') and not path.endswith('/locked.json'):
+            model=json.loads(data)
+            model.setdefault('display',{})['gui']={'rotation':[20,-35,0],'translation':[0,-1,0],'scale':[.8,.8,.8]}
+            result[path]=json.dumps(model).encode()
     return result
 
 if __name__ == '__main__':

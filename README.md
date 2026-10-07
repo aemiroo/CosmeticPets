@@ -114,3 +114,9 @@ Capybara now renders 35% larger by default. `capybara.scale` in config.yml accep
 ### 1.6.4 — multi-view Capybara reference
 
 Adds white eye highlights, a slightly lowered snout, longer brown/dark legs, a small raised tail and larger mottled fur patches from the supplied front, rear, side and top references. Keeps the 1.35 default scale, 24-frame quadruped walk and rare blink. Update both resource packs.
+
+### 1.6.5 — preferred Capybara reference
+
+Uses the selected short-legged reference: a straight broad head, plain black side eyes, small tilted ears, dark snout and feet, long boxy body, and warm mottled fur. Removes the white eye highlights, head tilt and tail from 1.6.4. Keeps the configurable 1.35 display scale, smooth diagonal-leg walking and rare relaxed blink.
+
+The 1.6.5 menu now groups current companions and Halloween Legacy into two labeled rows with custom model thumbnails, neutral filler panes and bottom-row Summon/Dismiss controls. Locked Baby Yeti keeps the black question mark.

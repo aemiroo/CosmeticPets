@@ -478,18 +478,18 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         if (!player.hasPermission("cosmeticpets.use")) return;
         if (event.getClick() != ClickType.LEFT && event.getClick() != ClickType.RIGHT) return;
         switch (event.getRawSlot()) {
-            case 4 -> { if (canUseYeti(player)) choose(player, PetKind.YETI, true); }
-            case 2 -> choose(player, PetKind.SNOWMAN, true);
-            case 6 -> choose(player, PetKind.REINDEER, true);
-            case 8 -> choose(player, PetKind.CAPYBARA, true);
-            case 20 -> choose(player, PetKind.CAT, true);
-            case 21 -> choose(player, PetKind.BAT, true);
-            case 22 -> choose(player, PetKind.ZOMBIE, true);
-            case 23 -> choose(player, PetKind.GHOST, true);
-            case 24 -> choose(player, PetKind.PUMPKIN, true);
-            case 30, 32 -> {
+            case 12 -> { if (canUseYeti(player)) choose(player, PetKind.YETI, true); }
+            case 10 -> choose(player, PetKind.SNOWMAN, true);
+            case 14 -> choose(player, PetKind.REINDEER, true);
+            case 16 -> choose(player, PetKind.CAPYBARA, true);
+            case 28 -> choose(player, PetKind.CAT, true);
+            case 29 -> choose(player, PetKind.BAT, true);
+            case 30 -> choose(player, PetKind.ZOMBIE, true);
+            case 31 -> choose(player, PetKind.GHOST, true);
+            case 32 -> choose(player, PetKind.PUMPKIN, true);
+            case 39, 41 -> {
                 var choice = preferences.get(player.getUniqueId());
-                if (choice != null) choose(player, choice.kind(), event.getRawSlot() == 30);
+                if (choice != null) choose(player, choice.kind(), event.getRawSlot() == 39);
                 else player.sendMessage(ChatColor.YELLOW + "Choose a pet first.");
             }
         }
@@ -515,28 +515,34 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         ItemMeta meta = item.getItemMeta(); meta.setDisplayName(ChatColor.GOLD + name);
         meta.setLore(List.of(ChatColor.GRAY + lore)); item.setItemMeta(meta); return item;
     }
+    private static ItemStack modelIcon(String model,String name,String lore) {
+        ItemStack item=icon(Material.PAPER,name,lore);
+        ItemMeta meta=item.getItemMeta();meta.setItemModel(new NamespacedKey("cosmeticpets",model));
+        item.setItemMeta(meta);return item;
+    }
     private static final class Menu implements InventoryHolder {
-        final Inventory inventory = Bukkit.createInventory(this, 36, "Cosmetic Pets");
+        final Inventory inventory = Bukkit.createInventory(this,45,"Cosmetic Pets");
         Menu(boolean yetiPreview) {
-            if (yetiPreview) inventory.setItem(4, icon(Material.POWDER_SNOW_BUCKET, "Baby Yeti", "Your unlocked winter companion."));
+            ItemStack filler=icon(Material.GRAY_STAINED_GLASS_PANE," ","");
+            for(int slot=0;slot<inventory.getSize();slot++)inventory.setItem(slot,filler);
+            inventory.setItem(4,icon(Material.NAME_TAG,"Companions","Choose your cosmetic companion below."));
+            inventory.setItem(10,modelIcon("snowman","Snowman","Click to summon."));
+            if(yetiPreview)inventory.setItem(12,modelIcon("yeti","Baby Yeti","Click to summon your unlocked companion."));
             else {
-                ItemStack locked=icon(Material.PAPER,"?","Locked: participate in defeating the Yeti Boss.");
-                ItemMeta meta=locked.getItemMeta();
-                meta.setDisplayName(ChatColor.BLACK+"?");
-                meta.setItemModel(new NamespacedKey("cosmeticpets","locked"));
-                locked.setItemMeta(meta);inventory.setItem(4,locked);
+                ItemStack locked=modelIcon("locked","?","Locked: participate in defeating the Yeti Boss.");
+                ItemMeta meta=locked.getItemMeta();meta.setDisplayName(ChatColor.BLACK+"?");
+                locked.setItemMeta(meta);inventory.setItem(12,locked);
             }
-            inventory.setItem(2, icon(Material.SNOWBALL, "Snowman", "A winter companion; requires the pet pack."));
-            inventory.setItem(6, icon(Material.SWEET_BERRIES, "Reindeer", "A playful companion; requires the pet pack."));
-            inventory.setItem(8, icon(Material.WHEAT, "Capybara", "A calm cosmetic companion; requires the pet pack."));
-            inventory.setItem(18, icon(Material.JACK_O_LANTERN,"Legacy • Halloween","Companions from the Halloween collection."));
-            inventory.setItem(20, icon(Material.COD,"Cat • Legacy","A cosmetic Halloween companion."));
-            inventory.setItem(21, icon(Material.BAT_SPAWN_EGG,"Bat • Legacy","A cosmetic Halloween companion."));
-            inventory.setItem(22, icon(Material.ZOMBIE_HEAD,"Zombie • Legacy","A cosmetic Halloween companion."));
-            inventory.setItem(23, icon(Material.GHAST_TEAR,"Ghost • Legacy","Requires the pet pack."));
-            inventory.setItem(24, icon(Material.PUMPKIN,"Pumpkin • Legacy","Requires the pet pack."));
-            inventory.setItem(30, icon(Material.LIME_DYE, "Summon", "Summon your saved pet."));
-            inventory.setItem(32, icon(Material.RED_DYE, "Dismiss", "Dismiss your pet; keep your selection."));
+            inventory.setItem(14,modelIcon("reindeer","Reindeer","Click to summon."));
+            inventory.setItem(16,modelIcon("capybara","Capybara","Click to summon."));
+            inventory.setItem(22,icon(Material.NAME_TAG,"Legacy • Halloween","Companions from the Halloween collection."));
+            inventory.setItem(28,icon(Material.CAT_SPAWN_EGG,"Cat • Legacy","Click to summon."));
+            inventory.setItem(29,icon(Material.BAT_SPAWN_EGG,"Bat • Legacy","Click to summon."));
+            inventory.setItem(30,icon(Material.ZOMBIE_HEAD,"Zombie • Legacy","Click to summon."));
+            inventory.setItem(31,modelIcon("ghost","Ghost • Legacy","Click to summon."));
+            inventory.setItem(32,modelIcon("pumpkin","Pumpkin • Legacy","Click to summon."));
+            inventory.setItem(39,icon(Material.LIME_DYE,"Summon","Summon your saved pet."));
+            inventory.setItem(41,icon(Material.RED_DYE,"Dismiss","Dismiss your pet; keep your selection."));
         }
         @Override public Inventory getInventory() { return inventory; }
     }
