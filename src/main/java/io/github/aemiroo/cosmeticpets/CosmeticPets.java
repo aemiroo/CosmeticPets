@@ -293,10 +293,6 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             if (clear(hop, PetKind.GHOST)) displayed = hop;
             pet.scareTicks--;
         }
-        if (pet.kind == PetKind.YETI) {
-            Location waddled = displayed.clone().add(0, 0.025 * (1-Math.cos(animationTick * Math.PI/10)),0);
-            if (clear(waddled,pet.kind)) displayed = waddled;
-        }
         if (pet.kind == PetKind.SNOWMAN) {
             long tick = animationTick + Math.floorMod(owner.getUniqueId().getLeastSignificantBits(), 32);
             double height = WinterMotion.hop(pet.kind,tick);
@@ -306,7 +302,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             if (pet.snowAirborne && !airborne) snowParticles = 5;
             pet.snowAirborne = airborne;
         }
-        if (pet.kind == PetKind.REINDEER) {
+        if (pet.kind == PetKind.REINDEER || pet.kind == PetKind.YETI) {
             double moved = pet.displayLast == null ? 0 : Math.hypot(
                     displayed.getX()-pet.displayLast.getX(), displayed.getZ()-pet.displayLast.getZ());
             int frame = -1;
@@ -317,7 +313,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             if (pet.walkFrame != frame) {
                 ItemStack item = pet.display.getItemStack();
                 ItemMeta meta = item.getItemMeta();
-                meta.setItemModel(new NamespacedKey("cosmeticpets", frame < 0 ? "reindeer" : "reindeer_walk_"+frame));
+                String species = pet.kind.name().toLowerCase(Locale.ROOT);
+                meta.setItemModel(new NamespacedKey("cosmeticpets", frame < 0 ? species : species+"_walk_"+frame));
                 item.setItemMeta(meta);
                 pet.display.setItemStack(item);
                 pet.walkFrame = frame;

@@ -1,12 +1,12 @@
 import json, unittest
-from build_pack import files, winter_model, reindeer_walk_model
+from build_pack import files, winter_model, reindeer_walk_model, yeti_walk_model
 from build_bedrock import files as bedrock_files, mappings
 class WinterPackTest(unittest.TestCase):
     def test_only_christmas_models_are_published(self):
         java,bedrock=files(),bedrock_files()
-        self.assertEqual({'snowman','reindeer','yeti'}|{'reindeer_walk_'+str(i) for i in range(12)},{p.split('/')[-1][:-5] for p in java if p.startswith('assets/cosmeticpets/items/')})
-        self.assertEqual({'snowman','reindeer','yeti'}|{'reindeer_walk_'+str(i) for i in range(12)},{p.split('/')[-1][:-5] for p in bedrock if p.startswith('attachables/')})
-        self.assertEqual(15,len(mappings()['items']['minecraft:paper']))
+        self.assertEqual({'snowman','reindeer','yeti'}|{pet+'_walk_'+str(i) for pet in ('reindeer','yeti') for i in range(12)},{p.split('/')[-1][:-5] for p in java if p.startswith('assets/cosmeticpets/items/')})
+        self.assertEqual({'snowman','reindeer','yeti'}|{pet+'_walk_'+str(i) for pet in ('reindeer','yeti') for i in range(12)},{p.split('/')[-1][:-5] for p in bedrock if p.startswith('attachables/')})
+        self.assertEqual(27,len(mappings()['items']['minecraft:paper']))
     def test_gait_moves_only_legs_and_keeps_them_in_collision_bounds(self):
         idle=winter_model('reindeer')
         for frame in range(12):
@@ -30,6 +30,17 @@ class WinterPackTest(unittest.TestCase):
         self.assertIn('yeti_fur_shadow',model['textures'])
         self.assertIn('yeti_fur_light',model['textures'])
         self.assertEqual(14,max(e['to'][1] for e in model['elements']))
+    def test_yeti_walking_moves_limbs_and_horns_project_forward(self):
+        idle=winter_model('yeti')
+        self.assertEqual(idle['elements'],yeti_walk_model(0)['elements'])
+        self.assertNotEqual(yeti_walk_model(3)['elements'],yeti_walk_model(9)['elements'])
+        for frame in range(12):
+            for old,new in zip(idle['elements'],yeti_walk_model(frame)['elements']):
+                if any(face['texture']=='#yeti_horn' for face in old['faces'].values()):
+                    self.assertEqual(old,new)
+        horns=[e for e in idle['elements'] if any(f['texture']=='#yeti_horn' for f in e['faces'].values())]
+        self.assertEqual(2,min(e['from'][2] for e in horns))
+        self.assertEqual(8,max(e['to'][2] for e in horns))
     def test_surface_union_has_no_internal_or_duplicate_faces(self):
         for pet in ('snowman','reindeer','yeti'):
             model=winter_model(pet)

@@ -59,10 +59,13 @@ def winter_model(pet):
         box((5,0,5),(7,3,10),'yeti_cream')
         box((9,0,5),(11,3,10),'yeti_cream')
         # Small horns wrap down the sides, rather than projecting above the head.
-        box((3,12,4),(5,14,7),'yeti_horn')
-        box((3,10,4),(4,12,6),'yeti_horn')
-        box((11,12,4),(13,14,7),'yeti_horn')
-        box((12,10,4),(13,12,6),'yeti_horn')
+        # Thick side roots taper forward and down into a curved three-dimensional tip.
+        box((2,12,4),(5,14,8),'yeti_horn')
+        box((2,11,3),(4,13,5),'yeti_horn')
+        box((3,10,2),(4,12,4),'yeti_horn')
+        box((11,12,4),(14,14,8),'yeti_horn')
+        box((12,11,3),(14,13,5),'yeti_horn')
+        box((12,10,2),(13,12,4),'yeti_horn')
         # Flat face: all facial colours occupy the same surface plane.
         box((5,9,4),(11,12,5),'yeti_face')
         box((5,11,4),(7,12,5),'yeti_blue')
@@ -248,6 +251,24 @@ def reindeer_walk_model(frame):
                 e[bound][2]+=dz
     return model
 
+def yeti_walk_model(frame):
+    model=winter_model('yeti')
+    phase=2*math.pi*frame/12
+    for e in model['elements']:
+        x,y,z=e['from']
+        leg=y<3 and x in (5,6,9,10) and 5<=z<10
+        arm=(x<4 or x>=12) and y<10 and 6<=z<11
+        if not (leg or arm): continue
+        sign=1 if x<8 else -1
+        swing=math.sin(phase)*sign
+        if arm: swing=-swing
+        dz=round((0.65 if arm else 0.7)*swing,6)
+        dy=round(max(0,swing)*0.35,6) if leg else 0
+        for bound in ('from','to'):
+            e[bound][1]+=dy
+            e[bound][2]+=dz
+    return model
+
 def files():
     source=legacy_files()
     keep={'snowman','reindeer','yeti'}
@@ -258,10 +279,11 @@ def files():
     for pet in sorted(keep):
         for path in ('assets/cosmeticpets/items/'+pet+'.json','assets/cosmeticpets/models/pet/'+pet+'.json'):
             result[path]=source[path]
-    for frame in range(12):
-        pet='reindeer_walk_'+str(frame)
-        result['assets/cosmeticpets/items/'+pet+'.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/'+pet}}).encode()
-        result['assets/cosmeticpets/models/pet/'+pet+'.json']=json.dumps(reindeer_walk_model(frame)).encode()
+    for species,builder in (('reindeer',reindeer_walk_model),('yeti',yeti_walk_model)):
+        for frame in range(12):
+            pet=species+'_walk_'+str(frame)
+            result['assets/cosmeticpets/items/'+pet+'.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/'+pet}}).encode()
+            result['assets/cosmeticpets/models/pet/'+pet+'.json']=json.dumps(builder(frame)).encode()
     for texture in sorted(textures):
         path='assets/'+texture.replace(':','/textures/')+'.png'
         result[path]=source[path]
