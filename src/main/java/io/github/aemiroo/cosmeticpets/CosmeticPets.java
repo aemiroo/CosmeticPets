@@ -130,7 +130,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             UUID id = owner.getUniqueId();
             var choice = preferences.get(id);
             if (choice != null && !choice.kind().modelled() && animationTick % 2 != 0) continue;
-            if (choice == null || !choice.summoned() || owner.isDead() || owner.getGameMode() == GameMode.SPECTATOR
+            if (choice == null || (choice.kind() == PetKind.YETI && !owner.hasPermission("cosmeticpets.yeti.preview")) || !choice.summoned() || owner.isDead() || owner.getGameMode() == GameMode.SPECTATOR
                     || owner.isInvisible() || !owner.hasPermission("cosmeticpets.use")) { remove(id); continue; }
             Pet pet = pets.get(id);
             if (pet == null || pet.kind != choice.kind() || !pet.position.getWorld().equals(owner.getWorld())) {

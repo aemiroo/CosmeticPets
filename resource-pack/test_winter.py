@@ -5,7 +5,7 @@ class WinterPackTest(unittest.TestCase):
     def test_only_christmas_models_are_published(self):
         java,bedrock=files(),bedrock_files()
         self.assertEqual({'snowman','reindeer','yeti'}|{'reindeer_walk_'+str(i) for i in range(12)},{p.split('/')[-1][:-5] for p in java if p.startswith('assets/cosmeticpets/items/')})
-        self.assertEqual({'snowman','reindeer'}|{'reindeer_walk_'+str(i) for i in range(12)},{p.split('/')[-1][:-5] for p in bedrock if p.startswith('attachables/')})
+        self.assertEqual({'snowman','reindeer','yeti'}|{'reindeer_walk_'+str(i) for i in range(12)},{p.split('/')[-1][:-5] for p in bedrock if p.startswith('attachables/')})
         self.assertEqual(15,len(mappings()['items']['minecraft:paper']))
     def test_gait_moves_only_legs_and_keeps_them_in_collision_bounds(self):
         idle=winter_model('reindeer')
@@ -21,7 +21,7 @@ class WinterPackTest(unittest.TestCase):
         self.assertEqual(idle['elements'],reindeer_walk_model(0)['elements'])
         self.assertNotEqual(reindeer_walk_model(3)['elements'],reindeer_walk_model(9)['elements'])
     def test_surface_union_has_no_internal_or_duplicate_faces(self):
-        for pet in ('snowman','reindeer'):
+        for pet in ('snowman','reindeer','yeti'):
             model=winter_model(pet)
             origins={tuple(e['from']) for e in model['elements']}
             self.assertEqual(len(origins),len(model['elements']))
@@ -34,7 +34,7 @@ class WinterPackTest(unittest.TestCase):
             self.assertTrue(all(0<=v<=16 for e in model['elements'] for bound in ('from','to') for v in e[bound]))
     def test_winter_models_exist_in_both_packs_and_mappings(self):
         java,bedrock=files(),bedrock_files()
-        for pet in ('snowman','reindeer'):
+        for pet in ('snowman','reindeer','yeti'):
             self.assertIn('assets/cosmeticpets/items/'+pet+'.json',java)
             attach=json.loads(bedrock['attachables/'+pet+'.json'])['minecraft:attachable']['description']
             self.assertEqual({'default':'entity_alphatest'},attach['materials'])
