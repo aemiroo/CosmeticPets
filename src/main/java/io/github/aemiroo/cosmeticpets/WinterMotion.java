@@ -12,11 +12,6 @@ final class WinterMotion {
         }
         return 0;
     }
-    static int snowParticles(long tick) {
-        int phase = Math.floorMod(tick,32);
-        if (phase == 0 || phase == 22) return 5;
-        return phase < 22 && phase % 4 == 0 ? 2 : 0;
-    }
     static int walkFrame(double distance) {
         return Math.floorMod((int)Math.floor(distance / 0.9 * 12),12);
     }

@@ -2,15 +2,12 @@ package io.github.aemiroo.cosmeticpets;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class WinterMotionTest {
-    @Test void snowmanLandsAndParticlesStayBounded() {
+    @Test void snowmanLandsAndRestsBetweenHops() {
         assertEquals(0,WinterMotion.hop(PetKind.SNOWMAN,0));
         assertEquals(0.35,WinterMotion.hop(PetKind.SNOWMAN,11),1e-12);
         for (long tick=-64;tick<64;tick++) {
             int phase=Math.floorMod(tick,32);
             if (phase>=22) assertEquals(0,WinterMotion.hop(PetKind.SNOWMAN,tick));
-            int particles=WinterMotion.snowParticles(tick);
-            assertTrue(particles>=0 && particles<=5);
-            if (phase>22) assertEquals(0,particles);
         }
     }
     @Test void gaitAdvancesWithTravelAndWrapsAtOneStride() {

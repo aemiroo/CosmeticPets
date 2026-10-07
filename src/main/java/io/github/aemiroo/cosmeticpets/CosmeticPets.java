@@ -74,6 +74,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             pet.displayLast = null;
             pet.scareTicks = 0;
             pet.lastScaleY = 1;
+            pet.snowAirborne = false;
             pet.walkFrame = -1;
             pet.walkDistance = 0;
             return;
@@ -294,11 +295,12 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         }
         if (pet.kind == PetKind.SNOWMAN) {
             long tick = animationTick + Math.floorMod(owner.getUniqueId().getLeastSignificantBits(), 32);
-            Location animated = displayed.clone().add(0, WinterMotion.hop(pet.kind, tick), 0);
-            if (clear(animated, pet.kind)) {
-                displayed = animated;
-                snowParticles = WinterMotion.snowParticles(tick);
-            }
+            double height = WinterMotion.hop(pet.kind,tick);
+            Location animated = displayed.clone().add(0,height,0);
+            boolean airborne = height > 0 && clear(animated,pet.kind);
+            if (airborne) displayed = animated;
+            if (pet.snowAirborne && !airborne) snowParticles = 5;
+            pet.snowAirborne = airborne;
         }
         if (pet.kind == PetKind.REINDEER) {
             double moved = pet.displayLast == null ? 0 : Math.hypot(
@@ -471,6 +473,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         final PetKind kind;
         ItemDisplay display;
         Location displayLast;
+        boolean snowAirborne;
         double walkDistance;
         int walkFrame = -1;
         int scareTicks;
