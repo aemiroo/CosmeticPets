@@ -2,11 +2,11 @@ import json, unittest
 from build_pack import files, winter_model, reindeer_walk_model, yeti_walk_model, limb
 from build_bedrock import files as bedrock_files, mappings
 class WinterPackTest(unittest.TestCase):
-    def test_only_christmas_models_are_published(self):
+    def test_current_and_legacy_models_are_published(self):
         java,bedrock=files(),bedrock_files()
-        self.assertEqual({'snowman','reindeer','yeti'}|{pet+'_walk_'+str(i) for pet in ('reindeer','yeti') for i in range(12)},{p.split('/')[-1][:-5] for p in java if p.startswith('assets/cosmeticpets/items/')})
-        self.assertEqual({'snowman','reindeer','yeti'}|{pet+'_walk_'+str(i) for pet in ('reindeer','yeti') for i in range(12)},{p.split('/')[-1][:-5] for p in bedrock if p.startswith('attachables/')})
-        self.assertEqual(27,len(mappings()['items']['minecraft:paper']))
+        self.assertEqual({'snowman','reindeer','yeti','ghost','pumpkin','capybara','locked'}|{pet+'_walk_'+str(i) for pet in ('reindeer','yeti','capybara') for i in range(12)},{p.split('/')[-1][:-5] for p in java if p.startswith('assets/cosmeticpets/items/')})
+        self.assertEqual({'snowman','reindeer','yeti','ghost','pumpkin','capybara','locked'}|{pet+'_walk_'+str(i) for pet in ('reindeer','yeti','capybara') for i in range(12)},{p.split('/')[-1][:-5] for p in bedrock if p.startswith('attachables/')})
+        self.assertEqual(43,len(mappings()['items']['minecraft:paper']))
     def test_joint_rotations_preserve_limb_shape_and_opposite_gait(self):
         for pet,builder in (('reindeer',reindeer_walk_model),('yeti',yeti_walk_model)):
             neutral=builder(0)

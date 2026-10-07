@@ -6,7 +6,7 @@ bundled here. All generated model/texture content remains original MIT content.
 import json, struct, zlib, zipfile
 from build_pack import ROOT, files as java_files
 
-PETS = ('snowman', 'reindeer', 'yeti') + tuple(pet+'_walk_'+str(i) for pet in ('reindeer','yeti') for i in range(12))
+PETS = ('snowman', 'reindeer', 'yeti','ghost','pumpkin','capybara','locked') + tuple(pet+'_walk_'+str(i) for pet in ('reindeer','yeti','capybara') for i in range(12))
 
 def encoded(value):
     return json.dumps(value, indent=2).encode()
@@ -74,8 +74,8 @@ def files():
     source = java_files()
     result = {'manifest.json':encoded({'format_version':2,
         'header':{'name':'CosmeticPets Bedrock','description':'Original Christmas companions',
-                  'uuid':'507ee74f-7d83-4f1d-8bdb-85b28f28796f','version':[1,5,0],'min_engine_version':[1,21,0]},
-        'modules':[{'type':'resources','uuid':'ea7e3a8b-f04e-4423-ae3c-8f79a89ad251','version':[1,5,0]}]}),
+                  'uuid':'507ee74f-7d83-4f1d-8bdb-85b28f28796f','version':[1,6,0],'min_engine_version':[1,21,0]},
+        'modules':[{'type':'resources','uuid':'ea7e3a8b-f04e-4423-ae3c-8f79a89ad251','version':[1,6,0]}]}),
         'LICENSE.txt':source['LICENSE.txt'],
         'render_controllers/cosmeticpets.json':encoded({'format_version':'1.8.0','render_controllers':{
             'controller.render.cosmeticpets':{'geometry':'Geometry.default',

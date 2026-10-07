@@ -113,7 +113,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     private boolean clear(Location at, PetKind kind) {
         double halfWidth = kind.modelled() ? 0.5 : 0.35;
         if (kind == PetKind.GHOST) at = at.clone().add(0, -0.5, 0);
-        double height = switch (kind) { case CAT -> 0.75; case BAT -> 0.95; case GHOST, PUMPKIN, SNOWMAN, REINDEER, YETI -> 1.0; case ZOMBIE -> 1.95; };
+        double height = switch (kind) { case CAT -> 0.75; case BAT -> 0.95; case GHOST, PUMPKIN, SNOWMAN, REINDEER, YETI, CAPYBARA -> 1.0; case ZOMBIE -> 1.95; };
         World world = at.getWorld();
         int minX = (int) Math.floor(at.getX() - halfWidth), maxX = (int) Math.floor(at.getX() + halfWidth);
         int minZ = (int) Math.floor(at.getZ() - halfWidth), maxZ = (int) Math.floor(at.getZ() + halfWidth);
@@ -211,7 +211,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     private Vector3d vector(Location position) { return new Vector3d(position.getX(), position.getY(), position.getZ()); }
     private void spawn(Player viewer, Pet pet) {
-        var type = switch (pet.kind) { case CAT -> EntityTypes.CAT; case BAT -> EntityTypes.BAT; case ZOMBIE -> EntityTypes.ZOMBIE; case GHOST, PUMPKIN, SNOWMAN, REINDEER, YETI -> throw new IllegalStateException("Ghosts use native displays"); };
+        var type = switch (pet.kind) { case CAT -> EntityTypes.CAT; case BAT -> EntityTypes.BAT; case ZOMBIE -> EntityTypes.ZOMBIE; case GHOST, PUMPKIN, SNOWMAN, REINDEER, YETI, CAPYBARA -> throw new IllegalStateException("Ghosts use native displays"); };
         send(viewer, new WrapperPlayServerSpawnEntity(pet.id, Optional.of(pet.uuid), type,
                 vector(pet.position), 0, pet.position.getYaw(), pet.position.getYaw(), 0, Optional.empty()));
         // Use client defaults: metadata indices vary by protocol version.
@@ -304,7 +304,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             if (pet.snowAirborne && !airborne) snowParticles = 5;
             pet.snowAirborne = airborne;
         }
-        if (pet.kind == PetKind.REINDEER || pet.kind == PetKind.YETI) {
+        if (pet.kind == PetKind.REINDEER || pet.kind == PetKind.YETI || pet.kind == PetKind.CAPYBARA) {
             double moved = pet.displayLast == null ? 0 : Math.hypot(
                     displayed.getX()-pet.displayLast.getX(), displayed.getZ()-pet.displayLast.getZ());
             int frame = -1;
@@ -390,6 +390,12 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             case "yeti" -> { if (canUseYeti(player)) choose(player, PetKind.YETI, true); else player.sendMessage(ChatColor.RED + "Baby Yeti is not unlocked yet."); }
             case "snowman" -> choose(player, PetKind.SNOWMAN, true);
             case "reindeer" -> choose(player, PetKind.REINDEER, true);
+            case "capybara" -> choose(player, PetKind.CAPYBARA, true);
+            case "cat" -> choose(player, PetKind.CAT, true);
+            case "bat" -> choose(player, PetKind.BAT, true);
+            case "zombie" -> choose(player, PetKind.ZOMBIE, true);
+            case "ghost" -> choose(player, PetKind.GHOST, true);
+            case "pumpkin" -> choose(player, PetKind.PUMPKIN, true);
             case "summon", "dismiss" -> {
                 if (choice == null) player.sendMessage(ChatColor.YELLOW + "Choose a pet first with /pets.");
                 else choose(player, choice.kind(), args[0].equalsIgnoreCase("summon"));
@@ -400,7 +406,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length != 1 || !sender.hasPermission("cosmeticpets.use")) return List.of();
-        return (sender instanceof Player player && canUseYeti(player) ? List.of("snowman", "reindeer", "yeti", "summon", "dismiss") : List.of("snowman", "reindeer", "summon", "dismiss")).stream()
+        return (sender instanceof Player player && canUseYeti(player) ? List.of("snowman", "reindeer", "capybara", "cat", "bat", "zombie", "ghost", "pumpkin", "yeti", "summon", "dismiss") : List.of("snowman", "reindeer", "capybara", "cat", "bat", "zombie", "ghost", "pumpkin", "summon", "dismiss")).stream()
                 .filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
     }
     private void forgetViewer(Player player) {
@@ -445,9 +451,15 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             case 4 -> { if (canUseYeti(player)) choose(player, PetKind.YETI, true); }
             case 2 -> choose(player, PetKind.SNOWMAN, true);
             case 6 -> choose(player, PetKind.REINDEER, true);
-            case 21, 23 -> {
+            case 8 -> choose(player, PetKind.CAPYBARA, true);
+            case 20 -> choose(player, PetKind.CAT, true);
+            case 21 -> choose(player, PetKind.BAT, true);
+            case 22 -> choose(player, PetKind.ZOMBIE, true);
+            case 23 -> choose(player, PetKind.GHOST, true);
+            case 24 -> choose(player, PetKind.PUMPKIN, true);
+            case 30, 32 -> {
                 var choice = preferences.get(player.getUniqueId());
-                if (choice != null) choose(player, choice.kind(), event.getRawSlot() == 21);
+                if (choice != null) choose(player, choice.kind(), event.getRawSlot() == 30);
                 else player.sendMessage(ChatColor.YELLOW + "Choose a pet first.");
             }
         }
@@ -474,13 +486,27 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         meta.setLore(List.of(ChatColor.GRAY + lore)); item.setItemMeta(meta); return item;
     }
     private static final class Menu implements InventoryHolder {
-        final Inventory inventory = Bukkit.createInventory(this, 27, "Christmas Pets");
+        final Inventory inventory = Bukkit.createInventory(this, 36, "Cosmetic Pets");
         Menu(boolean yetiPreview) {
             if (yetiPreview) inventory.setItem(4, icon(Material.POWDER_SNOW_BUCKET, "Baby Yeti", "Your unlocked winter companion."));
+            else {
+                ItemStack locked=icon(Material.PAPER,"?","Locked: participate in defeating the Yeti Boss.");
+                ItemMeta meta=locked.getItemMeta();
+                meta.setDisplayName(ChatColor.BLACK+"?");
+                meta.setItemModel(new NamespacedKey("cosmeticpets","locked"));
+                locked.setItemMeta(meta);inventory.setItem(4,locked);
+            }
             inventory.setItem(2, icon(Material.SNOWBALL, "Snowman", "A winter companion; requires the pet pack."));
             inventory.setItem(6, icon(Material.SWEET_BERRIES, "Reindeer", "A playful companion; requires the pet pack."));
-            inventory.setItem(21, icon(Material.LIME_DYE, "Summon", "Summon your saved pet."));
-            inventory.setItem(23, icon(Material.RED_DYE, "Dismiss", "Dismiss your pet; keep your selection."));
+            inventory.setItem(8, icon(Material.WHEAT, "Capybara", "A calm cosmetic companion; requires the pet pack."));
+            inventory.setItem(18, icon(Material.JACK_O_LANTERN,"Legacy • Halloween","Companions from the Halloween collection."));
+            inventory.setItem(20, icon(Material.COD,"Cat • Legacy","A cosmetic Halloween companion."));
+            inventory.setItem(21, icon(Material.BAT_SPAWN_EGG,"Bat • Legacy","A cosmetic Halloween companion."));
+            inventory.setItem(22, icon(Material.ZOMBIE_HEAD,"Zombie • Legacy","A cosmetic Halloween companion."));
+            inventory.setItem(23, icon(Material.GHAST_TEAR,"Ghost • Legacy","Requires the pet pack."));
+            inventory.setItem(24, icon(Material.PUMPKIN,"Pumpkin • Legacy","Requires the pet pack."));
+            inventory.setItem(30, icon(Material.LIME_DYE, "Summon", "Summon your saved pet."));
+            inventory.setItem(32, icon(Material.RED_DYE, "Dismiss", "Dismiss your pet; keep your selection."));
         }
         @Override public Inventory getInventory() { return inventory; }
     }

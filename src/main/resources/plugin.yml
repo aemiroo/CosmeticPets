@@ -1,14 +1,14 @@
 name: CosmeticPets
-version: 1.5.0
+version: 1.6.0
 main: io.github.aemiroo.cosmeticpets.CosmeticPets
 api-version: '1.21'
 depend: [packetevents]
 softdepend: [floodgate, Geyser-Spigot]
-description: Free cosmetic companions with Christmas pets.
+description: Free cosmetic companions with Halloween Legacy pets.
 commands:
   pets:
     description: Choose, summon or dismiss your cosmetic pet
-    usage: /pets [snowman|reindeer|summon|dismiss]
+    usage: /pets [snowman|reindeer|capybara|yeti|cat|bat|zombie|ghost|pumpkin|summon|dismiss]
     permission: cosmeticpets.use
 permissions:
   cosmeticpets.use:

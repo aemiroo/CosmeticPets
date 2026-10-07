@@ -41,6 +41,8 @@ def limb(pet, cell):
     x,y,z=cell
     if pet=='reindeer' and y<5 and x in (5,10) and z in (7,11):
         return ('leg',x,z)
+    if pet=='capybara' and y<3 and x in (4,5,10,11) and z in (5,6,11,12):
+        return ('leg',0 if x<8 else 1,0 if z<9 else 1)
     if pet=='yeti':
         if y<3 and x in (5,6,9,10) and 5<=z<10:
             return ('leg',0 if x<8 else 1)
@@ -61,7 +63,19 @@ def winter_model(pet, articulated=False):
                 for z in range(16):
                     if sum(((v+.5-c)/d)**2 for v,c,d in zip((x,y,z),center,radii))<=1:
                         cells[x,y,z]=material
-    if pet=='yeti':
+    if pet=='capybara':
+        # Low, broad barrel body, blunt muzzle and small rounded ears.
+        ball((8,5.5,9),(4.5,3.5,6),'capy_fur')
+        box((4,4,1),(12,9,7),'capy_fur')
+        box((5,3,0),(11,6,2),'capy_muzzle')
+        box((4,9,5),(6,11,7),'capy_fur');box((10,9,5),(12,11,7),'capy_fur')
+        box((4,7,2),(5,8,3),'coal');box((11,7,2),(12,8,3),'coal')
+        box((6,5,0),(7,6,1),'capy_nose');box((9,5,0),(10,6,1),'capy_nose')
+        for x in (4,10):
+            for z in (5,11):
+                box((x,0,z),(x+2,3,z+2),'capy_fur')
+                box((x,0,z),(x+2,1,z+2),'capy_muzzle')
+    elif pet=='yeti':
         # Original baby silhouette inspired by the supplied long-armed reference.
         box((4,2,5),(12,10,12),'yeti_cream')
         box((4,9,4),(12,14,11),'yeti_cream')
@@ -255,7 +269,11 @@ def walk_model(pet, frame):
     for element in model['elements']:
         part=limb(pet, element['from'])
         if part is None: continue
-        if pet=='reindeer':
+        if pet=='capybara':
+            _,x,z=part
+            pivot=[5 if x==0 else 11,3,6 if z==0 else 12]
+            angle=round(swing*(1 if x==z else -1))*22.5
+        elif pet=='reindeer':
             _,x,z=part
             # Vanilla quadruped gait: diagonal legs swing together.
             sign=1 if (x,z) in ((5,7),(10,11)) else -1
@@ -284,15 +302,19 @@ def yeti_walk_model(frame):
 
 def files():
     source=legacy_files()
-    keep={'snowman','reindeer','yeti'}
+    keep={'snowman','reindeer','yeti','ghost','pumpkin','capybara'}
+    source['assets/cosmeticpets/models/pet/capybara.json']=json.dumps(winter_model('capybara')).encode()
+    source['assets/cosmeticpets/items/capybara.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/capybara'}}).encode()
+    for name,color in {'capy_fur':(147,106,67,255),'capy_muzzle':(116,80,51,255),'capy_nose':(64,43,32,255)}.items():
+        source['assets/cosmeticpets/textures/pet/'+name+'.png']=png(color)
     models={p:json.loads(source['assets/cosmeticpets/models/pet/'+p+'.json']) for p in keep}
     textures={t for m in models.values() for t in m['textures'].values()}
-    result={'pack.mcmeta':json.dumps({'pack':{'description':'CosmeticPets - Christmas companions','min_format':[97,1],'max_format':[97,1]}}).encode(),
+    result={'pack.mcmeta':json.dumps({'pack':{'description':'CosmeticPets - Companions and Halloween Legacy','min_format':[97,1],'max_format':[97,1]}}).encode(),
             'LICENSE.txt':b'Original CosmeticPets Christmas models and textures: MIT License.\n'}
     for pet in sorted(keep):
         for path in ('assets/cosmeticpets/items/'+pet+'.json','assets/cosmeticpets/models/pet/'+pet+'.json'):
             result[path]=source[path]
-    for species,builder in (('reindeer',reindeer_walk_model),('yeti',yeti_walk_model)):
+    for species,builder in (('reindeer',reindeer_walk_model),('yeti',yeti_walk_model),('capybara',lambda f:walk_model('capybara',f))):
         for frame in range(12):
             pet=species+'_walk_'+str(frame)
             result['assets/cosmeticpets/items/'+pet+'.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/'+pet}}).encode()
@@ -302,6 +324,16 @@ def files():
         result[path]=source[path]
     result['assets/minecraft/atlases/items.json']=json.dumps({'sources':[
         {'type':'minecraft:single','resource':t,'sprite':t} for t in sorted(textures)]}).encode()
+    # A literal black question mark for locked menu entries, without custom fonts.
+    question=[]
+    for a,b in [([5,12,7],[11,14,9]),([9,9,7],[11,12,9]),([7,7,7],[11,9,9]),([7,5,7],[9,7,9]),([7,1,7],[9,3,9])]:
+        question.append(cube(a,b,'black'))
+    result['assets/cosmeticpets/models/pet/locked.json']=json.dumps({'textures':{'black':'cosmeticpets:pet/locked_black'},'elements':question,'display':{'fixed':{'rotation':[0,0,0],'translation':[0,8,0],'scale':[1,1,1]},'gui':{'rotation':[0,0,0],'translation':[0,0,0],'scale':[1,1,1]}}}).encode()
+    result['assets/cosmeticpets/items/locked.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/locked'}}).encode()
+    result['assets/cosmeticpets/textures/pet/locked_black.png']=png((0,0,0,255))
+    atlas=json.loads(result['assets/minecraft/atlases/items.json'])
+    atlas['sources'].append({'type':'minecraft:single','resource':'cosmeticpets:pet/locked_black','sprite':'cosmeticpets:pet/locked_black'})
+    result['assets/minecraft/atlases/items.json']=json.dumps(atlas).encode()
     return result
 
 if __name__ == '__main__':
