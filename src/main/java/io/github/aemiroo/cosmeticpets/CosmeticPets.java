@@ -111,7 +111,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     private boolean clear(Location at, PetKind kind) {
         double halfWidth = kind.modelled() ? 0.5 : 0.35;
         if (kind == PetKind.GHOST) at = at.clone().add(0, -0.5, 0);
-        double height = switch (kind) { case CAT -> 0.75; case BAT -> 0.95; case GHOST, PUMPKIN, SNOWMAN, REINDEER -> 1.0; case ZOMBIE -> 1.95; };
+        double height = switch (kind) { case CAT -> 0.75; case BAT -> 0.95; case GHOST, PUMPKIN, SNOWMAN, REINDEER, YETI -> 1.0; case ZOMBIE -> 1.95; };
         World world = at.getWorld();
         int minX = (int) Math.floor(at.getX() - halfWidth), maxX = (int) Math.floor(at.getX() + halfWidth);
         int minZ = (int) Math.floor(at.getZ() - halfWidth), maxZ = (int) Math.floor(at.getZ() + halfWidth);
@@ -209,7 +209,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     private Vector3d vector(Location position) { return new Vector3d(position.getX(), position.getY(), position.getZ()); }
     private void spawn(Player viewer, Pet pet) {
-        var type = switch (pet.kind) { case CAT -> EntityTypes.CAT; case BAT -> EntityTypes.BAT; case ZOMBIE -> EntityTypes.ZOMBIE; case GHOST, PUMPKIN, SNOWMAN, REINDEER -> throw new IllegalStateException("Ghosts use native displays"); };
+        var type = switch (pet.kind) { case CAT -> EntityTypes.CAT; case BAT -> EntityTypes.BAT; case ZOMBIE -> EntityTypes.ZOMBIE; case GHOST, PUMPKIN, SNOWMAN, REINDEER, YETI -> throw new IllegalStateException("Ghosts use native displays"); };
         send(viewer, new WrapperPlayServerSpawnEntity(pet.id, Optional.of(pet.uuid), type,
                 vector(pet.position), 0, pet.position.getYaw(), pet.position.getYaw(), 0, Optional.empty()));
         // Use client defaults: metadata indices vary by protocol version.
@@ -293,6 +293,10 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
             if (clear(hop, PetKind.GHOST)) displayed = hop;
             pet.scareTicks--;
         }
+        if (pet.kind == PetKind.YETI) {
+            Location waddled = displayed.clone().add(0, 0.025 * (1-Math.cos(animationTick * Math.PI/10)),0);
+            if (clear(waddled,pet.kind)) displayed = waddled;
+        }
         if (pet.kind == PetKind.SNOWMAN) {
             long tick = animationTick + Math.floorMod(owner.getUniqueId().getLeastSignificantBits(), 32);
             double height = WinterMotion.hop(pet.kind,tick);
@@ -356,6 +360,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         }
     }
     private boolean choose(Player player, PetKind kind, boolean summoned) {
+        if (kind == PetKind.YETI && !player.hasPermission("cosmeticpets.yeti.preview")) return false;
         try { preferences.set(player.getUniqueId(), new Preferences.Choice(kind, summoned)); }
         catch (IOException e) { player.sendMessage(ChatColor.RED + "Could not save your pet preference. Please try again."); return false; }
         remove(player.getUniqueId());
@@ -369,10 +374,11 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("Use this command in-game."); return true; }
         if (!player.hasPermission("cosmeticpets.use")) return true;
-        if (args.length == 0) { player.openInventory(new Menu().inventory); return true; }
+        if (args.length == 0) { player.openInventory(new Menu(player.hasPermission("cosmeticpets.yeti.preview")).inventory); return true; }
         if (args.length != 1) return false;
         var choice = preferences.get(player.getUniqueId());
         switch (args[0].toLowerCase(Locale.ROOT)) {
+            case "yeti" -> { if (player.hasPermission("cosmeticpets.yeti.preview")) choose(player, PetKind.YETI, true); else player.sendMessage(ChatColor.RED + "Baby Yeti is not unlocked yet."); }
             case "snowman" -> choose(player, PetKind.SNOWMAN, true);
             case "reindeer" -> choose(player, PetKind.REINDEER, true);
             case "summon", "dismiss" -> {
@@ -385,7 +391,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length != 1 || !sender.hasPermission("cosmeticpets.use")) return List.of();
-        return List.of("snowman", "reindeer", "summon", "dismiss").stream()
+        return (sender.hasPermission("cosmeticpets.yeti.preview") ? List.of("snowman", "reindeer", "yeti", "summon", "dismiss") : List.of("snowman", "reindeer", "summon", "dismiss")).stream()
                 .filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
     }
     private void forgetViewer(Player player) {
@@ -427,6 +433,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
         if (!player.hasPermission("cosmeticpets.use")) return;
         if (event.getClick() != ClickType.LEFT && event.getClick() != ClickType.RIGHT) return;
         switch (event.getRawSlot()) {
+            case 4 -> { if (player.hasPermission("cosmeticpets.yeti.preview")) choose(player, PetKind.YETI, true); }
             case 2 -> choose(player, PetKind.SNOWMAN, true);
             case 6 -> choose(player, PetKind.REINDEER, true);
             case 21, 23 -> {
@@ -459,7 +466,8 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
     }
     private static final class Menu implements InventoryHolder {
         final Inventory inventory = Bukkit.createInventory(this, 27, "Christmas Pets");
-        Menu() {
+        Menu(boolean yetiPreview) {
+            if (yetiPreview) inventory.setItem(4, icon(Material.POWDER_SNOW_BUCKET, "Baby Yeti", "Admin teaser companion."));
             inventory.setItem(2, icon(Material.SNOWBALL, "Snowman", "A winter companion; requires the pet pack."));
             inventory.setItem(6, icon(Material.SWEET_BERRIES, "Reindeer", "A playful companion; requires the pet pack."));
             inventory.setItem(21, icon(Material.LIME_DYE, "Summon", "Summon your saved pet."));

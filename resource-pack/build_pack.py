@@ -50,7 +50,17 @@ def winter_model(pet):
                 for z in range(16):
                     if sum(((v+.5-c)/d)**2 for v,c,d in zip((x,y,z),center,radii))<=1:
                         cells[x,y,z]=material
-    if pet=='snowman':
+    if pet=='yeti':
+        ball((8,5,8),(4,5,3.5),'snow')
+        ball((8,10,7),(3.5,3.5,3),'snow')
+        box((3,3,6),(5,8,9),'snow'); box((11,3,6),(13,8,9),'snow')
+        box((5,0,5),(7,2,9),'snow'); box((9,0,5),(11,2,9),'snow')
+        box((5,12,6),(6,15,7),'antler'); box((10,12,6),(11,15,7),'antler')
+        box((5,10,4),(7,11,5),'yeti_blue'); box((9,10,4),(11,11,5),'yeti_blue')
+        box((7,8,3),(9,10,5),'muzzle')
+        box((7,9,2),(9,10,3),'coal')
+        box((6,7,4),(10,8,5),'coal')
+    elif pet=='snowman':
         ball((8,4,8),(4,4,4),'snow')
         ball((8,8,8),(3,3,3),'snow')
         ball((8,11,8),(2.5,2.5,2.5),'snow')
@@ -189,11 +199,11 @@ def legacy_files():
     result['assets/cosmeticpets/models/pet/pumpkin.json']=json.dumps(pumpkin_model()).encode()
     colors={'pumpkin_orange':(238,123,24,255),'pumpkin_rib':(213,98,18,255),
             'pumpkin_green':(74,101,32,255),'pumpkin_stem':(86,65,33,255),
-            'pumpkin_inner':(140,58,14,255),'pumpkin_glow':(255,197,74,255), 'snow':(240,248,255,255),
+            'pumpkin_inner':(140,58,14,255),'pumpkin_glow':(255,197,74,255), 'yeti_blue':(75,169,224,255), 'snow':(240,248,255,255),
             'coal':(35,30,32,255),'scarf':(190,32,43,255),'carrot':(245,130,28,255),
             'wood':(105,70,38,255),'fur':(135,82,44,255),'muzzle':(211,166,112,255),
             'red_nose':(242,54,54,255),'antler':(193,153,101,255)}
-    for pet in ('snowman','reindeer'):
+    for pet in ('snowman','reindeer','yeti'):
         result['assets/cosmeticpets/items/'+pet+'.json']=json.dumps({'model':{'type':'minecraft:model','model':'cosmeticpets:pet/'+pet}}).encode()
         result['assets/cosmeticpets/models/pet/'+pet+'.json']=json.dumps(winter_model(pet)).encode()
     atlas=json.loads(result['assets/minecraft/atlases/items.json'])
@@ -221,7 +231,7 @@ def reindeer_walk_model(frame):
 
 def files():
     source=legacy_files()
-    keep={'snowman','reindeer'}
+    keep={'snowman','reindeer','yeti'}
     models={p:json.loads(source['assets/cosmeticpets/models/pet/'+p+'.json']) for p in keep}
     textures={t for m in models.values() for t in m['textures'].values()}
     result={'pack.mcmeta':json.dumps({'pack':{'description':'CosmeticPets - Christmas companions','min_format':[97,1],'max_format':[97,1]}}).encode(),

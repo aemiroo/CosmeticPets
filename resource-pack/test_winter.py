@@ -4,9 +4,9 @@ from build_bedrock import files as bedrock_files, mappings
 class WinterPackTest(unittest.TestCase):
     def test_only_christmas_models_are_published(self):
         java,bedrock=files(),bedrock_files()
-        self.assertEqual({'snowman','reindeer'}|{'reindeer_walk_'+str(i) for i in range(12)},{p.split('/')[-1][:-5] for p in java if p.startswith('assets/cosmeticpets/items/')})
+        self.assertEqual({'snowman','reindeer','yeti'}|{'reindeer_walk_'+str(i) for i in range(12)},{p.split('/')[-1][:-5] for p in java if p.startswith('assets/cosmeticpets/items/')})
         self.assertEqual({'snowman','reindeer'}|{'reindeer_walk_'+str(i) for i in range(12)},{p.split('/')[-1][:-5] for p in bedrock if p.startswith('attachables/')})
-        self.assertEqual(14,len(mappings()['items']['minecraft:paper']))
+        self.assertEqual(15,len(mappings()['items']['minecraft:paper']))
     def test_gait_moves_only_legs_and_keeps_them_in_collision_bounds(self):
         idle=winter_model('reindeer')
         for frame in range(12):
