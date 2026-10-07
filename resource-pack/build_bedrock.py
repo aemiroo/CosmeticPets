@@ -67,7 +67,7 @@ def files():
     source = java_files()
     result = {'manifest.json':encoded({'format_version':2,
         'header':{'name':'CosmeticPets Bedrock','description':'Original Christmas companions',
-                  'uuid':'507ee74f-7d83-4f1d-8bdb-85b28f28796f','version':[1,4,0],'min_engine_version':[1,21,0]},
+                  'uuid':'507ee74f-7d83-4f1d-8bdb-85b28f28796f','version':[1,4,1],'min_engine_version':[1,21,0]},
         'modules':[{'type':'resources','uuid':'ea7e3a8b-f04e-4423-ae3c-8f79a89ad251','version':[1,3,2]}]}),
         'LICENSE.txt':source['LICENSE.txt'],
         'render_controllers/cosmeticpets.json':encoded({'format_version':'1.8.0','render_controllers':{

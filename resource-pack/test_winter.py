@@ -20,6 +20,16 @@ class WinterPackTest(unittest.TestCase):
                     self.assertTrue(all(0<=v<=16 for v in animated[bound]))
         self.assertEqual(idle['elements'],reindeer_walk_model(0)['elements'])
         self.assertNotEqual(reindeer_walk_model(3)['elements'],reindeer_walk_model(9)['elements'])
+    def test_yeti_has_flat_face_side_horns_and_patterned_fur(self):
+        model=winter_model('yeti')
+        cells={tuple(e['from']):e for e in model['elements']}
+        face_textures={'#yeti_face','#yeti_blue','#coal','#yeti_nose','#yeti_smile'}
+        facial=[e for e in model['elements'] if any(f['texture'] in face_textures for f in e['faces'].values())]
+        self.assertTrue(facial)
+        self.assertTrue(all(e['from'][2]==4 for e in facial))
+        self.assertIn('yeti_fur_shadow',model['textures'])
+        self.assertIn('yeti_fur_light',model['textures'])
+        self.assertEqual(14,max(e['to'][1] for e in model['elements']))
     def test_surface_union_has_no_internal_or_duplicate_faces(self):
         for pet in ('snowman','reindeer','yeti'):
             model=winter_model(pet)

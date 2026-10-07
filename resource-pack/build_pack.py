@@ -51,15 +51,31 @@ def winter_model(pet):
                     if sum(((v+.5-c)/d)**2 for v,c,d in zip((x,y,z),center,radii))<=1:
                         cells[x,y,z]=material
     if pet=='yeti':
-        ball((8,5,8),(4,5,3.5),'snow')
-        ball((8,10,7),(3.5,3.5,3),'snow')
-        box((3,3,6),(5,8,9),'snow'); box((11,3,6),(13,8,9),'snow')
-        box((5,0,5),(7,2,9),'snow'); box((9,0,5),(11,2,9),'snow')
-        box((5,12,6),(6,15,7),'antler'); box((10,12,6),(11,15,7),'antler')
-        box((5,10,4),(7,11,5),'yeti_blue'); box((9,10,4),(11,11,5),'yeti_blue')
-        box((7,8,3),(9,10,5),'muzzle')
-        box((7,9,2),(9,10,3),'coal')
-        box((6,7,4),(10,8,5),'coal')
+        # Original baby silhouette inspired by the supplied long-armed reference.
+        box((4,2,5),(12,10,12),'yeti_cream')
+        box((4,9,4),(12,14,11),'yeti_cream')
+        box((1,1,6),(4,10,11),'yeti_cream')
+        box((12,1,6),(15,10,11),'yeti_cream')
+        box((5,0,5),(7,3,10),'yeti_cream')
+        box((9,0,5),(11,3,10),'yeti_cream')
+        # Small horns wrap down the sides, rather than projecting above the head.
+        box((3,12,4),(5,14,7),'yeti_horn')
+        box((3,10,4),(4,12,6),'yeti_horn')
+        box((11,12,4),(13,14,7),'yeti_horn')
+        box((12,10,4),(13,12,6),'yeti_horn')
+        # Flat face: all facial colours occupy the same surface plane.
+        box((5,9,4),(11,12,5),'yeti_face')
+        box((5,11,4),(7,12,5),'yeti_blue')
+        box((9,11,4),(11,12,5),'yeti_blue')
+        box((6,11,4),(7,12,5),'coal')
+        box((9,11,4),(10,12,5),'coal')
+        box((7,10,4),(9,11,5),'yeti_nose')
+        box((6,9,4),(10,10,5),'yeti_smile')
+        # A repeatable voxel fur pattern is preserved in both pack formats.
+        for (x,y,z),material in list(cells.items()):
+            if material=='yeti_cream':
+                stripe=(x*7+z*11+(y//2)*3)%17
+                cells[x,y,z]='yeti_fur_shadow' if stripe<3 else ('yeti_fur_light' if stripe==5 else material)
     elif pet=='snowman':
         ball((8,4,8),(4,4,4),'snow')
         ball((8,8,8),(3,3,3),'snow')
@@ -199,7 +215,10 @@ def legacy_files():
     result['assets/cosmeticpets/models/pet/pumpkin.json']=json.dumps(pumpkin_model()).encode()
     colors={'pumpkin_orange':(238,123,24,255),'pumpkin_rib':(213,98,18,255),
             'pumpkin_green':(74,101,32,255),'pumpkin_stem':(86,65,33,255),
-            'pumpkin_inner':(140,58,14,255),'pumpkin_glow':(255,197,74,255), 'yeti_blue':(75,169,224,255), 'snow':(240,248,255,255),
+            'pumpkin_inner':(140,58,14,255),'pumpkin_glow':(255,197,74,255), 'yeti_cream':(235,235,216,255),'yeti_fur_shadow':(204,209,185,255),
+            'yeti_fur_light':(249,249,237,255),'yeti_horn':(155,162,132,255),
+            'yeti_face':(117,153,168,255),'yeti_nose':(74,105,119,255),
+            'yeti_smile':(48,78,90,255),'yeti_blue':(109,204,229,255), 'snow':(240,248,255,255),
             'coal':(35,30,32,255),'scarf':(190,32,43,255),'carrot':(245,130,28,255),
             'wood':(105,70,38,255),'fur':(135,82,44,255),'muzzle':(211,166,112,255),
             'red_nose':(242,54,54,255),'antler':(193,153,101,255)}
