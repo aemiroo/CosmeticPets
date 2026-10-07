@@ -301,7 +301,7 @@ public final class CosmeticPets extends JavaPlugin implements Listener {
                     displayed.getX()-pet.displayLast.getX(), displayed.getZ()-pet.displayLast.getZ());
             int frame = -1;
             if (moved > 0.002 && moved < 1) {
-                pet.walkDistance = (pet.walkDistance + Math.min(moved,0.2)) % 0.9;
+                pet.walkDistance = (pet.walkDistance + Math.min(moved,0.06)) % 0.9;
                 frame = WinterMotion.walkFrame(pet.walkDistance);
             } else pet.walkDistance = 0;
             if (pet.walkFrame != frame) {
